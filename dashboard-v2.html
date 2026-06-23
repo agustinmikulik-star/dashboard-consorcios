@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Consorcios - Sincronizado</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/tabler-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f5f5f5;
+      --color-background-success: #d4edda;
+      --color-background-warning: #fff3cd;
+      --color-background-info: #d1ecf1;
+      --color-text-primary: #212529;
+      --color-text-secondary: #6c757d;
+      --color-text-tertiary: #999999;
+      --color-text-success: #155724;
+      --color-text-warning: #856404;
+      --color-text-info: #0c5460;
+      --color-border-secondary: #e0e0e0;
+      --border-radius-md: 6px;
+      --border-radius-lg: 8px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--color-background-secondary);
+      color: var(--color-text-primary);
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 8px;
+    }
+
+    .header {
+      background: #152E4F;
+      color: white;
+      padding: 0.8rem 1rem;
+      border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 0;
+    }
+
+    .header h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .header p {
+      margin: 0;
+      font-size: 13px;
+      color: #c3cbd6;
+    }
+
+    .save-status {
+      font-size: 11.5px;
+      color: #8fa0b8;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 6px;
+      background: var(--color-background-secondary);
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--color-border-secondary);
+    }
+
+    .nav-tab {
+      border: none;
+      background: transparent;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      border-radius: var(--border-radius-md);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .nav-tab.active {
+      background: var(--color-background-primary);
+      color: #152E4F;
+    }
+
+    .nav-tab:hover {
+      background: var(--color-background-secondary);
+    }
+
+    .content {
+      background: var(--color-background-primary);
+      padding: 12px;
+      min-height: 60vh;
+    }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th {
+      background: var(--color-background-secondary);
+      padding: 6px 8px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      border-bottom: 1px solid var(--color-border-secondary);
+    }
+
+    td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--color-border-secondary);
+    }
+
+    tr:hover {
+      background: var(--color-background-secondary);
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 4px 6px;
+      border: 1px solid var(--color-border-secondary);
+      border-radius: var(--border-radius-md);
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #152E4F;
+      box-shadow: 0 0 0 2px rgba(21, 46, 79, 0.1);
+    }
+
+    .btn-delete {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .btn-delete:hover {
+      background: #c82333;
+    }
+
+    .btn-add {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 10px;
+    }
+
+    .btn-add:hover {
+      background: #218838;
+    }
+
+    .resumen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 2rem;
+    }
+
+    .resumen-card {
+      background: var(--color-background-secondary);
+      padding: 1.2rem;
+      border-radius: var(--border-radius-lg);
+      border: 1px solid var(--color-border-secondary);
+    }
+
+    .resumen-card h3 {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .resumen-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #152E4F;
+      margin: 8px 0;
+    }
+
+    .resumen-subtitle {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      margin-top: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--color-text-secondary);
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      th, td {
+        padding: 8px;
+      }
+
+      .resumen-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h2>Consorcios</h2>
+        <p id="mes-actual">Junio 2026</p>
+      </div>
+      <p class="save-status" id="save-status">Conectando…</p>
+    </div>
+
+    <div class="nav-tabs" id="nav-tabs">
+      <button class="nav-tab active" data-view="resumen">
+        <i class="ti ti-chart-pie-2"></i> Resumen
+      </button>
+      <button class="nav-tab" data-view="gastos">
+        <i class="ti ti-receipt"></i> Gastos
+      </button>
+      <button class="nav-tab" data-view="pagos-rivera">
+        <i class="ti ti-building"></i> Pagos Rivera
+      </button>
+      <button class="nav-tab" data-view="pagos-bucarelli">
+        <i class="ti ti-building"></i> Pagos Bucarelli
+      </button>
+    </div>
+
+    <div class="content" id="content">
+      <div class="loading">Cargando datos…</div>
+    </div>
+  </div>
+
+  <script>
+    // Esperar a que la página cargue completamente
+    window.addEventListener('DOMContentLoaded', initApp);
+
+    async function initApp() {
+      try {
+        const SUPABASE_URL = 'https://kdyhxowfebovndjufdvp.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_eGTaa0rEPe-NDqpA5sREYg_Q3kQWJsr';
+        
+        // Crear cliente Supabase
+        const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log('Supabase conectado:', sbClient);
+
+        // Variables globales
+        let currentView = 'resumen';
+        let edificios = {};
+        let saveStatus = 'connected';
+
+        // Funciones de formato
+        function money(v) {
+          const n = Number(v);
+          if (!isFinite(n)) return '$ 0';
+          const s = Math.abs(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          return (n < 0 ? '-$ ' : '$ ') + s;
+        }
+
+        function parseMoneyInput(raw) {
+          if (raw === '' || raw === null || raw === undefined) return null;
+          const cleaned = String(raw).replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
+          const n = parseFloat(cleaned);
+          return isFinite(n) ? n : null;
+        }
+
+        function updateSaveStatus(status) {
+          saveStatus = status;
+          const el = document.getElementById('save-status');
+          if (status === 'saving') {
+            el.textContent = 'Guardando…';
+          } else if (status === 'error') {
+            el.textContent = 'Error al guardar';
+          } else {
+            el.textContent = 'Sincronizado';
+          }
+        }
+
+        // Cargar datos
+        async function loadData() {
+          try {
+            updateSaveStatus('saving');
+
+            // Cargar edificios
+            const { data: edificiosData, error: edErr } = await sbClient
+              .from('edificios')
+              .select('*');
+
+            if (edErr) throw edErr;
+
+            for (const ed of edificiosData) {
+              edificios[ed.clave] = {
+                id: ed.id,
+                nombre: ed.nombre,
+                gastos: [],
+                unidades: []
+              };
+            }
+
+            // Cargar gastos
+            const { data: gastosData, error: gErr } = await sbClient
+              .from('gastos')
+              .select('*');
+
+            if (gErr) throw gErr;
+
+            for (const g of gastosData) {
+              const edKey = edificiosData.find(e => e.id === g.edificio_id)?.clave;
+              if (edKey) edificios[edKey].gastos.push(g);
+            }
+
+            // Cargar unidades
+            const { data: unidadesData, error: uErr } = await sbClient
+              .from('unidades')
+              .select('*');
+
+            if (uErr) throw uErr;
+
+            for (const u of unidadesData) {
+              const edKey = edificiosData.find(e => e.id === u.edificio_id)?.clave;
+              if (edKey) edificios[edKey].unidades.push(u);
+            }
+
+            // Configurar listeners
+            setupRealtimeListeners(sbClient, edificiosData);
+
+            updateSaveStatus('connected');
+            render();
+          } catch (err) {
+            console.error('Error cargando datos:', err);
+            updateSaveStatus('error');
+          }
+        }
+
+        function setupRealtimeListeners(sbClient, edificiosData) {
+          sbClient
+            .channel('public:gastos')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'gastos' }, (payload) => {
+              const edKey = edificiosData.find(e => e.id === payload.new?.edificio_id || payload.old?.edificio_id)?.clave;
+              if (edKey) {
+                if (payload.eventType === 'INSERT') {
+                  edificios[edKey].gastos.push(payload.new);
+                } else if (payload.eventType === 'UPDATE') {
+                  const idx = edificios[edKey].gastos.findIndex(g => g.id === payload.new.id);
+                  if (idx !== -1) edificios[edKey].gastos[idx] = payload.new;
+                } else if (payload.eventType === 'DELETE') {
+                  edificios[edKey].gastos = edificios[edKey].gastos.filter(g => g.id !== payload.old.id);
+                }
+                render();
+              }
+            })
+            .subscribe();
+
+          sbClient
+            .channel('public:unidades')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'unidades' }, (payload) => {
+              const edKey = edificiosData.find(e => e.id === payload.new?.edificio_id || payload.old?.edificio_id)?.clave;
+              if (edKey) {
+                if (payload.eventType === 'INSERT') {
+                  edificios[edKey].unidades.push(payload.new);
+                } else if (payload.eventType === 'UPDATE') {
+                  const idx = edificios[edKey].unidades.findIndex(u => u.id === payload.new.id);
+                  if (idx !== -1) edificios[edKey].unidades[idx] = payload.new;
+                } else if (payload.eventType === 'DELETE') {
+                  edificios[edKey].unidades = edificios[edKey].unidades.filter(u => u.id !== payload.old.id);
+                }
+                render();
+              }
+            })
+            .subscribe();
+        }
+
+        function render() {
+          renderNav();
+          renderContent();
+        }
+
+        function renderNav() {
+          const nav = document.getElementById('nav-tabs');
+          nav.querySelectorAll('.nav-tab').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.view === currentView) {
+              btn.classList.add('active');
+            }
+            btn.onclick = () => {
+              currentView = btn.dataset.view;
+              render();
+            };
+          });
+        }
+
+        function renderContent() {
+          const contentEl = document.getElementById('content');
+          
+          if (currentView === 'resumen') {
+            contentEl.innerHTML = renderResumen();
+          } else if (currentView === 'gastos') {
+            contentEl.innerHTML = renderGastos();
+            attachGastosHandlers();
+          } else if (currentView === 'pagos-rivera') {
+            contentEl.innerHTML = renderPagos('rivera');
+            attachPagosHandlers('rivera');
+          } else if (currentView === 'pagos-bucarelli') {
+            contentEl.innerHTML = renderPagos('bucarelli');
+            attachPagosHandlers('bucarelli');
+          }
+        }
+
+        function renderResumen() {
+          let html = '<div style="max-width: 600px;">';
+          
+          for (const [key, ed] of Object.entries(edificios)) {
+            const totalSaldo = ed.unidades.reduce((sum, u) => sum + (u.saldo || 0), 0);
+            const totalPagado = ed.unidades.reduce((sum, u) => sum + (u.pago || 0), 0);
+            const unidadesConDeuda = ed.unidades.filter(u => (u.saldo || 0) > (u.pago || 0)).length;
+            const gastosPendientes = ed.gastos.filter(g => g.estado && g.estado !== 'PAGO').length;
+
+            html += `
+              <div style="margin-bottom: 24px;">
+                <h3 style="background: #333; color: white; padding: 8px 12px; margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">${ed.nombre}</h3>
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 8px 0;">Total a cobrar este mes</td>
+                    <td style="text-align: right; padding: 8px 0;"><strong>${money(totalSaldo)}</strong></td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 8px 0;">Total cobrado</td>
+                    <td style="text-align: right; padding: 8px 0;"><strong>${money(totalPagado)}</strong></td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 8px 0;">Saldo pendiente de cobro</td>
+                    <td style="text-align: right; padding: 8px 0;"><strong>${money(totalSaldo - totalPagado)}</strong></td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 8px 0;">Unidades con deuda</td>
+                    <td style="text-align: right; padding: 8px 0;"><strong>${unidadesConDeuda}</strong></td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;">Gastos pendientes de pago</td>
+                    <td style="text-align: right; padding: 8px 0;"><strong>${gastosPendientes}</strong></td>
+                  </tr>
+                </table>
+              </div>
+            `;
+          }
+          
+          html += '</div>';
+          return html;
+        }
+
+        function renderGastos() {
+          let html = '';
+          
+          for (const [key, ed] of Object.entries(edificios)) {
+            html += `
+              <div>
+                <h3 class="section-title">${ed.nombre}</h3>
+                <div class="table-wrapper">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Gasto</th>
+                        <th>Factura</th>
+                        <th>Estado</th>
+                        <th style="width: 80px;">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${ed.gastos.map(g => `
+                        <tr>
+                          <td><input type="text" value="${g.gasto || ''}" data-field="gasto" data-table="gastos" data-key="${key}" data-id="${g.id}"></td>
+                          <td><input type="text" value="${g.factura || ''}" data-field="factura" data-table="gastos" data-key="${key}" data-id="${g.id}"></td>
+                          <td>${g.estado || ''}</td>
+                          <td><button class="btn-delete" data-id="${g.id}" data-table="gastos">✕</button></td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+                <button class="btn-add" data-action="add-gasto" data-key="${key}">+ Agregar gasto</button>
+              </div>
+            `;
+          }
+          
+          return html;
+        }
+
+        function renderPagos(edKey) {
+          const ed = edificios[edKey];
+          let html = `
+            <h3 class="section-title">${ed.nombre} — Listado de Pagos</h3>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>UF</th>
+                    <th>Piso</th>
+                    <th>Vecino</th>
+                    <th>Saldo</th>
+                    <th>Pago</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${ed.unidades.map(u => `
+                    <tr>
+                      <td><input type="number" value="${u.uf || ''}" data-field="uf" data-table="unidades" data-key="${edKey}" data-id="${u.id}" style="width: 60px;"></td>
+                      <td><input type="text" value="${u.piso || ''}" data-field="piso" data-table="unidades" data-key="${edKey}" data-id="${u.id}"></td>
+                      <td><input type="text" value="${u.vecino || ''}" data-field="vecino" data-table="unidades" data-key="${edKey}" data-id="${u.id}"></td>
+                      <td><input type="text" value="${u.saldo ? money(u.saldo) : ''}" data-field="saldo" data-table="unidades" data-key="${edKey}" data-id="${u.id}" style="text-align: right;"></td>
+                      <td><input type="text" value="${u.pago ? money(u.pago) : ''}" data-field="pago" data-table="unidades" data-key="${edKey}" data-id="${u.id}" style="text-align: right;"></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+          
+          return html;
+        }
+
+        function attachGastosHandlers() {
+          // Inputs
+          document.querySelectorAll('input[data-table]').forEach(input => {
+            input.onchange = async () => {
+              const id = parseInt(input.dataset.id);
+              const table = input.dataset.table;
+              const field = input.dataset.field;
+              let value = input.value;
+
+              if (field === 'saldo' || field === 'pago') {
+                value = parseMoneyInput(value);
+              } else if (field === 'uf') {
+                value = value ? parseInt(value) : null;
+              }
+
+              updateSaveStatus('saving');
+              const { error } = await sbClient.from(table).update({ [field]: value }).eq('id', id);
+              updateSaveStatus(error ? 'error' : 'connected');
+            };
+          });
+
+          // Botones delete
+          document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.onclick = async () => {
+              const id = parseInt(btn.dataset.id);
+              const table = btn.dataset.table;
+              updateSaveStatus('saving');
+              const { error } = await sbClient.from(table).delete().eq('id', id);
+              updateSaveStatus(error ? 'error' : 'connected');
+            };
+          });
+
+          // Botones agregar
+          document.querySelectorAll('.btn-add').forEach(btn => {
+            btn.onclick = async () => {
+              const key = btn.dataset.key;
+              const action = btn.dataset.action;
+              const edId = edificios[key].id;
+              updateSaveStatus('saving');
+
+              if (action === 'add-gasto') {
+                const { error } = await sbClient.from('gastos').insert([{
+                  edificio_id: edId,
+                  gasto: '',
+                  factura: '',
+                  estado: ''
+                }]);
+                updateSaveStatus(error ? 'error' : 'connected');
+              } else if (action === 'add-unidad') {
+                const { error } = await sbClient.from('unidades').insert([{
+                  edificio_id: edId,
+                  uf: null,
+                  piso: '',
+                  vecino: '',
+                  saldo: null,
+                  pago: null
+                }]);
+                updateSaveStatus(error ? 'error' : 'connected');
+              }
+            };
+          });
+        }
+
+        function attachPagosHandlers(edKey) {
+          attachGastosHandlers();
+        }
+
+        // Cargar datos al iniciar
+        loadData();
+
+      } catch (err) {
+        console.error('Error en initApp:', err);
+        document.getElementById('content').innerHTML = '<div class="loading" style="color: red;">Error: ' + err.message + '</div>';
+      }
+    }
+  </script>
+</body>
+</html>
