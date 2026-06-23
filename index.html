@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AM Administración · Dashboard de Consorcios</title>
+
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:title" content="AM Administración">
+  <meta property="og:description" content="Dashboard de Consorcios">
+  <meta property="og:image" content="https://agustinmikulik-star.github.io/dashboard-consorcios/og-image.png">
+  <meta property="og:url" content="https://agustinmikulik-star.github.io/dashboard-consorcios/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AM Administración">
+  <meta name="twitter:description" content="Dashboard de Consorcios">
+  <meta name="twitter:image" content="https://agustinmikulik-star.github.io/dashboard-consorcios/og-image.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Saira:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      /* Paleta principal */
+      --azul-900: #0a1a30;
+      --azul-800: #122642;
+      --azul-700: #1a3458;
+      --azul-600: #25456f;
+      --azul-100: #e8edf3;
+      --azul-50: #f4f6fa;
+
+      /* Neutros */
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --border: #e6e8ec;
+      --border-soft: #f0f1f4;
+      --text: #1a1f2e;
+      --text-muted: #6b7280;
+      --text-subtle: #9ca3af;
+
+      /* Acentos */
+      --verde: #10b981;
+      --verde-bg: #ecfdf5;
+      --verde-text: #047857;
+      --amarillo: #f59e0b;
+      --amarillo-bg: #fffbeb;
+      --amarillo-text: #b45309;
+      --rojo: #ef4444;
+      --rojo-bg: #fef2f2;
+      --rojo-text: #b91c1c;
+      --cyan: #06b6d4;
+      --cyan-bg: #ecfeff;
+      --cyan-text: #0e7490;
+
+      /* Sombras */
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04);
+
+      /* Radius */
+      --radius-sm: 6px;
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, var(--azul-800) 0%, var(--azul-700) 100%);
+      color: white;
+      padding: 22px 28px;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+
+    .header-logo {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      filter: brightness(0) invert(1);
+      opacity: 0.95;
+    }
+
+    .header-text { flex: 1; min-width: 140px; }
+
+    .header h1 {
+      font-family: 'Saira', 'Inter', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .header .subtitle {
+      font-size: 12.5px;
+      color: rgba(255,255,255,0.65);
+      font-weight: 500;
+      margin-top: 2px;
+      letter-spacing: 0.01em;
+    }
+
+    .save-status {
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    .save-status::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--verde);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+    .save-status[data-status="saving"]::before { background: var(--amarillo); box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2); }
+    .save-status[data-status="error"]::before { background: var(--rojo); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2); }
+
+    /* NAV TABS */
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+
+    .nav-tab {
+      border: none;
+      background: transparent;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .nav-tab:hover { background: var(--azul-50); color: var(--azul-700); }
+    .nav-tab.active {
+      background: var(--azul-800);
+      color: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* CONTENT */
+    .content {
+      background: var(--surface);
+      padding: 28px;
+      min-height: 60vh;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    /* RESUMEN — Cards */
+    .resumen-wrapper {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      max-width: 760px;
+    }
+
+    .resumen-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: box-shadow 0.2s ease;
+    }
+    .resumen-card:hover { box-shadow: var(--shadow-md); }
+
+    .resumen-card-header {
+      background: var(--azul-50);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .resumen-card-header h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--azul-800);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .resumen-card-body { padding: 4px 0; }
+
+    .resumen-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .resumen-row:last-child { border-bottom: none; }
+
+    .resumen-row .label {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .resumen-row .value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .resumen-row.highlight .value {
+      color: var(--azul-800);
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    /* SECTION TITLE */
+    .section-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--azul-900);
+      letter-spacing: -0.01em;
+    }
+    .section-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    /* TABLAS */
+    .tabla-wrapper {
+      overflow-x: auto;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    table.tabla-datos {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    table.tabla-datos th {
+      background: var(--azul-50);
+      padding: 11px 14px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--azul-800);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+
+    table.tabla-datos td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border-soft);
+      color: var(--text);
+    }
+    table.tabla-datos tr:last-child td { border-bottom: none; }
+    table.tabla-datos tbody tr:hover { background: var(--azul-50); }
+    table.tabla-datos tr.total-row:hover { background: var(--azul-100); }
+
+    .num { text-align: right; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+    /* CELDAS EDITABLES */
+    .editable {
+      cursor: text;
+      min-height: 24px;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      transition: all 0.12s ease;
+      margin: -4px -8px;
+    }
+    .editable:hover {
+      background: var(--azul-50);
+      border-color: var(--azul-100);
+    }
+    .editable:focus {
+      outline: none;
+      border-color: var(--azul-600);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px rgba(37, 69, 111, 0.12);
+    }
+
+    /* ESTADOS */
+    .estado-btn {
+      border: none;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      min-width: 120px;
+      text-align: center;
+      transition: all 0.12s ease;
+      font-family: inherit;
+    }
+    .estado-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+
+    .estado-PAGO { background: var(--verde-bg); color: var(--verde-text); }
+    .estado-PAGAR { background: var(--amarillo-bg); color: var(--amarillo-text); }
+    .estado-SIN { background: var(--rojo-bg); color: var(--rojo-text); }
+    .estado-DEBITO { background: var(--cyan-bg); color: var(--cyan-text); }
+    .estado-NA { background: #f0f1f4; color: #6b7280; }
+
+    /* Botón eliminar sutil */
+    .btn-delete-row {
+      background: transparent;
+      border: none;
+      color: var(--text-subtle);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px 8px;
+      border-radius: 4px;
+      line-height: 1;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .btn-delete-row:hover {
+      color: var(--rojo);
+      background: var(--rojo-bg);
+    }
+
+    .estado-dropdown { position: relative; display: inline-block; }
+
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      z-index: 100;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      min-width: 150px;
+      overflow: hidden;
+      padding: 4px;
+    }
+
+    .dropdown-item {
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-radius: 999px;
+      text-align: center;
+      margin: 2px 0;
+      transition: filter 0.12s;
+    }
+    .dropdown-item:hover { filter: brightness(0.93); }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* TOTAL ROW */
+    .total-row {
+      background: var(--azul-50);
+      font-weight: 700;
+    }
+    .total-row td {
+      padding: 12px 14px;
+      border-top: 2px solid var(--azul-700);
+      color: var(--azul-900);
+      font-size: 13.5px;
+    }
+
+    /* HELP TEXT */
+    .help-text {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      background: var(--azul-50);
+      border-left: 3px solid var(--azul-600);
+      border-radius: var(--radius-sm);
+    }
+    .help-text strong { color: var(--azul-800); }
+
+    /* BOTÓN AGREGAR */
+    .btn-add {
+      background: var(--azul-800);
+      color: white;
+      border: none;
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 4px;
+      transition: all 0.15s;
+      font-family: inherit;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-add:hover { background: var(--azul-900); transform: translateY(-1px); box-shadow: var(--shadow); }
+
+    /* BOTÓN COPIAR */
+    .btn-copy {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--azul-700);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      line-height: 1;
+    }
+    .btn-copy:hover {
+      background: var(--azul-100);
+      border-color: var(--azul-600);
+      transform: scale(1.05);
+    }
+    .btn-copy.copied {
+      background: var(--verde-bg);
+      color: var(--verde-text);
+      border-color: var(--verde);
+    }
+
+    /* NOTAS */
+    .notas-section {
+      margin-top: 28px;
+      max-width: 760px;
+    }
+    .notas-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .notas-card-header {
+      background: var(--azul-50);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .notas-card-header h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--azul-800);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .notas-content {
+      padding: 16px 18px;
+      min-height: 140px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+      outline: none;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      transition: background 0.15s;
+    }
+    .notas-content:focus { background: var(--azul-50); }
+    .notas-content:empty:before {
+      content: 'Escribí tus notas acá…';
+      color: var(--text-subtle);
+      font-style: italic;
+    }
+
+    /* SECCIÓN DE GASTOS */
+    .gastos-section { margin-bottom: 36px; }
+    .gastos-section:last-child { margin-bottom: 0; }
+
+    /* MOBILE */
+    @media (max-width: 768px) {
+      .container { padding: 12px 10px 24px; }
+      .header { padding: 16px 18px; gap: 12px; }
+      .header-logo { width: 36px; height: 36px; }
+      .header h1 { font-size: 18px; }
+      .content { padding: 18px 14px; }
+      .section-title { font-size: 15px; }
+      table.tabla-datos { font-size: 12px; }
+      table.tabla-datos th, table.tabla-datos td { padding: 8px 10px; }
+      .estado-btn { min-width: 90px; padding: 4px 8px; font-size: 10px; }
+      .resumen-wrapper { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <img src="data:image/png;base64,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" alt="AM" class="header-logo">
+      <div class="header-text">
+        <h1>AM Administración</h1>
+        <div class="subtitle">Dashboard de consorcios · <span id="mes-actual">…</span></div>
+      </div>
+      <div class="save-status" id="save-status" data-status="connecting">Conectando…</div>
+    </header>
+
+    <div class="nav-tabs" id="nav-tabs">
+      <button class="nav-tab active" data-view="resumen">Resumen</button>
+      <button class="nav-tab" data-view="gastos">Gastos</button>
+      <button class="nav-tab" data-view="pagos-rivera">Pagos Rivera</button>
+      <button class="nav-tab" data-view="pagos-bucarelli">Pagos Bucarelli</button>
+    </div>
+
+    <main class="content" id="content">
+      <div class="loading">Cargando datos…</div>
+    </main>
+  </div>
+
+
+  <script>
+    window.addEventListener('DOMContentLoaded', initApp);
+
+    async function initApp() {
+      const SUPABASE_URL = 'https://kdyhxowfebovndjufdvp.supabase.co';
+      const SUPABASE_KEY = 'sb_publishable_eGTaa0rEPe-NDqpA5sREYg_Q3kQWJsr';
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      // Mostrar mes actual dinámicamente
+      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      const ahora = new Date();
+      document.getElementById('mes-actual').textContent = `${meses[ahora.getMonth()]} ${ahora.getFullYear()}`;
+
+      let currentView = 'resumen';
+      let edificios = {};
+      let edificiosArr = [];
+      let notaContenido = '';
+
+      // ---------- HELPERS ----------
+      function money(v) {
+        if (v === null || v === undefined || v === '') return '';
+        const n = Number(v);
+        if (!isFinite(n)) return '';
+        return '$ ' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function parseMoneyInput(raw) {
+        if (raw === '' || raw === null || raw === undefined) return null;
+        // Quita símbolos de moneda y espacios
+        let s = String(raw).trim().replace(/\$|\s/g, '');
+        // Argentina: punto miles, coma decimal
+        // Excel puede dar números crudos o con coma
+        if (s.includes(',')) {
+          s = s.replace(/\./g, '').replace(',', '.');
+        }
+        const n = parseFloat(s);
+        return isFinite(n) ? n : null;
+      }
+
+      function updateSaveStatus(status) {
+        const el = document.getElementById('save-status');
+        if (status === 'saving') {
+          el.textContent = 'Guardando…';
+          el.dataset.status = 'saving';
+        } else if (status === 'error') {
+          el.textContent = 'Error al guardar';
+          el.dataset.status = 'error';
+        } else {
+          el.textContent = 'Sincronizado';
+          el.dataset.status = 'connected';
+        }
+      }
+
+      // ---------- CARGA INICIAL ----------
+      async function loadData() {
+        try {
+          updateSaveStatus('saving');
+
+          const { data: edData, error: e1 } = await sb.from('edificios').select('*').order('id');
+          if (e1) throw e1;
+
+          edificiosArr = edData;
+          for (const ed of edData) {
+            edificios[ed.clave] = { id: ed.id, nombre: ed.nombre, gastos: [], unidades: [] };
+          }
+
+          const { data: gastosData, error: e2 } = await sb.from('gastos').select('*').order('id');
+          if (e2) throw e2;
+          for (const g of gastosData) {
+            const k = edData.find(e => e.id === g.edificio_id)?.clave;
+            if (k) edificios[k].gastos.push(g);
+          }
+
+          const { data: unidadesData, error: e3 } = await sb.from('unidades').select('*').order('id');
+          if (e3) throw e3;
+          for (const u of unidadesData) {
+            const k = edData.find(e => e.id === u.edificio_id)?.clave;
+            if (k) edificios[k].unidades.push(u);
+          }
+
+          // Cargar notas
+          const { data: notasData } = await sb.from('notas').select('*').limit(1);
+          if (notasData && notasData.length > 0) {
+            notaContenido = notasData[0].contenido || '';
+          }
+
+          setupRealtime();
+          updateSaveStatus('connected');
+          render();
+        } catch (err) {
+          console.error('Error cargando:', err);
+          updateSaveStatus('error');
+        }
+      }
+
+      function setupRealtime() {
+        sb.channel('gastos-changes')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'gastos' }, (payload) => {
+            const k = edificiosArr.find(e => e.id === (payload.new?.edificio_id || payload.old?.edificio_id))?.clave;
+            if (!k) return;
+            if (payload.eventType === 'INSERT') {
+              if (!edificios[k].gastos.find(g => g.id === payload.new.id)) {
+                edificios[k].gastos.push(payload.new);
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              const i = edificios[k].gastos.findIndex(g => g.id === payload.new.id);
+              if (i !== -1) edificios[k].gastos[i] = payload.new;
+            } else if (payload.eventType === 'DELETE') {
+              edificios[k].gastos = edificios[k].gastos.filter(g => g.id !== payload.old.id);
+            }
+            render();
+          }).subscribe();
+
+        sb.channel('unidades-changes')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'unidades' }, (payload) => {
+            const k = edificiosArr.find(e => e.id === (payload.new?.edificio_id || payload.old?.edificio_id))?.clave;
+            if (!k) return;
+            if (payload.eventType === 'UPDATE') {
+              const i = edificios[k].unidades.findIndex(u => u.id === payload.new.id);
+              if (i !== -1) edificios[k].unidades[i] = payload.new;
+            }
+            render();
+          }).subscribe();
+      }
+
+      // ---------- RENDER ----------
+      function render() {
+        document.querySelectorAll('.nav-tab').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.view === currentView);
+          btn.onclick = () => { currentView = btn.dataset.view; render(); };
+        });
+
+        const c = document.getElementById('content');
+        if (currentView === 'resumen') c.innerHTML = renderResumen();
+        else if (currentView === 'gastos') { c.innerHTML = renderGastos(); attachGastosHandlers(); }
+        else if (currentView === 'pagos-rivera') { c.innerHTML = renderPagos('rivera'); attachPagosHandlers('rivera'); }
+        else if (currentView === 'pagos-bucarelli') { c.innerHTML = renderPagos('bucarelli'); attachPagosHandlers('bucarelli'); }
+      }
+
+      function renderResumen() {
+        let html = '<div class="resumen-wrapper">';
+        for (const [k, ed] of Object.entries(edificios)) {
+          const totalCobrar = ed.unidades.reduce((s, u) => s + (u.saldo || 0), 0);
+          const totalCobrado = ed.unidades.reduce((s, u) => s + (u.pago || 0), 0);
+          const pendiente = totalCobrar - totalCobrado;
+          // Solo cuenta como deudor si debe más de $1 (ignora diferencias por centavos)
+          const conDeuda = ed.unidades.filter(u => ((u.saldo || 0) - (u.pago || 0)) > 1).length;
+          const gastosPend = ed.gastos.filter(g => g.estado === 'PAGAR' || g.estado === '' || !g.estado).length;
+
+          html += `
+            <div class="resumen-card">
+              <div class="resumen-card-header">
+                <h3>${ed.nombre}</h3>
+              </div>
+              <div class="resumen-card-body">
+                <div class="resumen-row highlight"><span class="label">Total a cobrar este mes</span><span class="value">${money(totalCobrar)}</span></div>
+                <div class="resumen-row"><span class="label">Total cobrado</span><span class="value">${money(totalCobrado)}</span></div>
+                <div class="resumen-row"><span class="label">Saldo pendiente de cobro</span><span class="value">${money(pendiente)}</span></div>
+                <div class="resumen-row"><span class="label">Unidades con deuda</span><span class="value">${conDeuda}</span></div>
+                <div class="resumen-row"><span class="label">Gastos pendientes de pago</span><span class="value">${gastosPend}</span></div>
+              </div>
+            </div>
+          `;
+        }
+        html += '</div>';
+
+        // Sección de Notas
+        html += `
+          <div class="notas-section">
+            <div class="notas-card">
+              <div class="notas-card-header">
+                <h3>Notas</h3>
+              </div>
+              <div class="notas-content" id="notas-content" contenteditable="true">${notaContenido.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            </div>
+          </div>
+        `;
+
+        // Attach handler después de que se renderice
+        setTimeout(() => {
+          const el = document.getElementById('notas-content');
+          if (el) {
+            el.addEventListener('blur', async () => {
+              const newVal = el.innerText;
+              if (newVal === notaContenido) return;
+              updateSaveStatus('saving');
+              const { error } = await sb.from('notas').update({ contenido: newVal, updated_at: new Date().toISOString() }).eq('id', 1);
+              if (error) {
+                updateSaveStatus('error');
+                console.error(error);
+              } else {
+                updateSaveStatus('connected');
+                notaContenido = newVal;
+              }
+            });
+          }
+        }, 0);
+
+        return html;
+      }
+
+      function estadoLabel(e) {
+        if (e === 'PAGO') return 'PAGO';
+        if (e === 'PAGAR') return 'PAGAR';
+        if (e === 'DEBITO') return 'DÉBITO';
+        if (e === 'NA') return '—';
+        return 'SIN FACTURA';
+      }
+
+      function estadoClase(e) {
+        if (e === 'PAGO') return 'estado-PAGO';
+        if (e === 'PAGAR') return 'estado-PAGAR';
+        if (e === 'DEBITO') return 'estado-DEBITO';
+        if (e === 'NA') return 'estado-NA';
+        return 'estado-SIN';
+      }
+
+      function renderGastos() {
+        let html = '';
+        for (const [k, ed] of Object.entries(edificios)) {
+          html += `
+            <div class="gastos-section">
+              <h3 class="section-title">${ed.nombre}</h3>
+              <p class="section-subtitle">Control de gastos del mes</p>
+              <div class="tabla-wrapper">
+                <table class="tabla-datos">
+                  <thead>
+                    <tr>
+                      <th style="width: 42%;">Gasto / Proveedor</th>
+                      <th style="width: 28%;">Referencia</th>
+                      <th style="width: 22%;">Estado</th>
+                      <th style="width: 40px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${ed.gastos.map(g => `
+                      <tr data-id="${g.id}">
+                        <td><div class="editable" data-field="gasto" data-id="${g.id}">${g.gasto || ''}</div></td>
+                        <td><div class="editable" data-field="factura" data-id="${g.id}">${g.factura || ''}</div></td>
+                        <td>
+                          <div class="estado-dropdown">
+                            <button class="estado-btn ${estadoClase(g.estado)}" data-id="${g.id}" data-current="${g.estado || ''}">
+                              ${estadoLabel(g.estado)}
+                            </button>
+                          </div>
+                        </td>
+                        <td style="text-align: center;">
+                          ${g.eliminable ? `<button class="btn-delete-row" data-id="${g.id}" data-key="${k}" title="Eliminar gasto">×</button>` : ''}
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+              <button class="btn-add" data-key="${k}">+ Agregar gasto</button>
+            </div>
+          `;
+        }
+        return html;
+      }
+
+      function renderPagos(edKey) {
+        const ed = edificios[edKey];
+        const totalSaldo = ed.unidades.reduce((s, u) => s + (u.saldo || 0), 0);
+        const totalPago = ed.unidades.reduce((s, u) => s + (u.pago || 0), 0);
+        const debe = totalSaldo - totalPago;
+
+        return `
+          <h3 class="section-title">${ed.nombre}</h3>
+          <p class="section-subtitle">Listado de pagos del mes</p>
+          <div class="help-text">💡 Clickeá una celda de <strong>SALDO</strong> o <strong>PAGO</strong> para editar. Podés copiar una columna desde Excel y pegarla con Ctrl+V. Para copiar al revés (del dashboard al Excel), usá el botón 📋 en el encabezado de la columna.</p>
+          <div class="tabla-wrapper">
+            <table class="tabla-datos">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">UF</th>
+                  <th style="width: 90px;">Piso</th>
+                  <th>Vecino</th>
+                  <th style="width: 150px;" class="num">
+                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                      Saldo
+                      <button class="btn-copy" data-field="saldo" data-key="${edKey}" title="Copiar columna Saldo para Excel">📋</button>
+                    </div>
+                  </th>
+                  <th style="width: 150px;" class="num">
+                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                      Pago
+                      <button class="btn-copy" data-field="pago" data-key="${edKey}" title="Copiar columna Pago para Excel">📋</button>
+                    </div>
+                  </th>
+                  <th style="width: 130px;" class="num">Debe</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ed.unidades.map(u => {
+                  const debe = (u.saldo || 0) - (u.pago || 0);
+                  return `
+                    <tr data-id="${u.id}">
+                      <td>${u.uf !== null ? u.uf : ''}</td>
+                      <td>${u.piso || ''}</td>
+                      <td>${u.vecino || ''}</td>
+                      <td class="num"><div class="editable" data-field="saldo" data-id="${u.id}" data-raw="${u.saldo || ''}">${u.saldo ? money(u.saldo) : ''}</div></td>
+                      <td class="num"><div class="editable" data-field="pago" data-id="${u.id}" data-raw="${u.pago || ''}">${u.pago ? money(u.pago) : ''}</div></td>
+                      <td class="num" style="color: ${debe > 1 ? 'var(--rojo)' : debe < -1 ? 'var(--cyan-text)' : 'var(--text-subtle)'}; font-weight: ${Math.abs(debe) > 1 ? '600' : '400'};">${Math.abs(debe) < 1 ? '—' : money(debe)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+                <tr class="total-row">
+                  <td colspan="3">TOTAL</td>
+                  <td class="num">${money(totalSaldo)}</td>
+                  <td class="num">${money(totalPago)}</td>
+                  <td class="num">${money(debe)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      // ---------- HANDLERS GASTOS ----------
+      function attachGastosHandlers() {
+        // Editar texto de gasto/factura
+        document.querySelectorAll('#content .editable').forEach(el => {
+          el.contentEditable = 'true';
+          
+          el.addEventListener('focus', () => {
+            el.dataset.original = el.textContent;
+          });
+
+          el.addEventListener('blur', async () => {
+            const newVal = el.textContent.trim();
+            if (newVal === el.dataset.original) return;
+            const id = parseInt(el.dataset.id);
+            const field = el.dataset.field;
+            updateSaveStatus('saving');
+            const { error } = await sb.from('gastos').update({ [field]: newVal }).eq('id', id);
+            updateSaveStatus(error ? 'error' : 'connected');
+          });
+
+          el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+          });
+        });
+
+        // Dropdown de estado
+        document.querySelectorAll('.estado-btn').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.remove());
+
+            const menu = document.createElement('div');
+            menu.className = 'dropdown-menu';
+            const opciones = [
+              { val: '', label: 'SIN FACTURA', clase: 'estado-SIN' },
+              { val: 'PAGAR', label: 'PAGAR', clase: 'estado-PAGAR' },
+              { val: 'PAGO', label: 'PAGO', clase: 'estado-PAGO' },
+              { val: 'DEBITO', label: 'DÉBITO', clase: 'estado-DEBITO' },
+              { val: 'NA', label: '—', clase: 'estado-NA' }
+            ];
+            opciones.forEach(opt => {
+              const item = document.createElement('div');
+              item.className = `dropdown-item ${opt.clase}`;
+              item.textContent = opt.label;
+              item.onclick = async () => {
+                const id = parseInt(btn.dataset.id);
+                updateSaveStatus('saving');
+                const { error } = await sb.from('gastos').update({ estado: opt.val }).eq('id', id);
+                if (error) {
+                  updateSaveStatus('error');
+                } else {
+                  updateSaveStatus('connected');
+                  // Actualizar state local
+                  for (const k of Object.keys(edificios)) {
+                    const gasto = edificios[k].gastos.find(g => g.id === id);
+                    if (gasto) {
+                      gasto.estado = opt.val;
+                      break;
+                    }
+                  }
+                  // Actualizar el botón visualmente sin re-render completo
+                  btn.className = `estado-btn ${estadoClase(opt.val)}`;
+                  btn.textContent = estadoLabel(opt.val);
+                  btn.dataset.current = opt.val;
+                }
+                menu.remove();
+              };
+              menu.appendChild(item);
+            });
+            btn.parentElement.appendChild(menu);
+          };
+        });
+
+        // Cerrar dropdown al click afuera
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.estado-dropdown')) {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.remove());
+          }
+        });
+
+        // Botón eliminar gasto
+        document.querySelectorAll('.btn-delete-row').forEach(btn => {
+          btn.onclick = async () => {
+            if (!confirm('¿Eliminar este gasto?')) return;
+            const id = parseInt(btn.dataset.id);
+            const k = btn.dataset.key;
+            updateSaveStatus('saving');
+            const { error } = await sb.from('gastos').delete().eq('id', id);
+            if (error) {
+              updateSaveStatus('error');
+              console.error(error);
+            } else {
+              updateSaveStatus('connected');
+              // Actualizar state local
+              edificios[k].gastos = edificios[k].gastos.filter(g => g.id !== id);
+              // Quitar la fila visualmente
+              const row = btn.closest('tr');
+              if (row) row.remove();
+            }
+          };
+        });
+
+        // Botón agregar gasto
+        document.querySelectorAll('.btn-add').forEach(btn => {
+          btn.onclick = async () => {
+            const k = btn.dataset.key;
+            const edId = edificios[k].id;
+            updateSaveStatus('saving');
+            const { data, error } = await sb.from('gastos').insert([{
+              edificio_id: edId, gasto: '', factura: '', estado: '', eliminable: true
+            }]).select();
+            if (error) {
+              updateSaveStatus('error');
+              console.error(error);
+            } else {
+              updateSaveStatus('connected');
+              // Agregar al state local y re-renderizar
+              if (data && data.length > 0) {
+                edificios[k].gastos.push(data[0]);
+                render();
+              }
+            }
+          };
+        });
+      }
+
+      // ---------- HANDLERS PAGOS ----------
+      function attachPagosHandlers(edKey) {
+        const saldoCells = Array.from(document.querySelectorAll('#content .editable[data-field="saldo"]'));
+        const pagoCells = Array.from(document.querySelectorAll('#content .editable[data-field="pago"]'));
+
+        // Refrescar columna DEBE de una fila específica
+        function refreshDebeCell(unidadId) {
+          const unidad = edificios[edKey].unidades.find(u => u.id === unidadId);
+          if (!unidad) return;
+          const row = document.querySelector(`#content tr[data-id="${unidadId}"]`);
+          if (!row) return;
+          const debeCell = row.cells[5];
+          const debe = (unidad.saldo || 0) - (unidad.pago || 0);
+          debeCell.textContent = Math.abs(debe) < 1 ? '—' : money(debe);
+          debeCell.style.color = debe > 1 ? 'var(--rojo)' : debe < -1 ? 'var(--cyan-text)' : 'var(--text-subtle)';
+          debeCell.style.fontWeight = Math.abs(debe) > 1 ? '600' : '400';
+        }
+
+        // Refrescar fila TOTAL
+        function refreshTotalRow() {
+          const ed = edificios[edKey];
+          const totalRow = document.querySelector('#content .total-row');
+          if (!totalRow) return;
+          const totalSaldo = ed.unidades.reduce((s, u) => s + (u.saldo || 0), 0);
+          const totalPago = ed.unidades.reduce((s, u) => s + (u.pago || 0), 0);
+          const totalDebe = totalSaldo - totalPago;
+          totalRow.cells[1].textContent = money(totalSaldo);
+          totalRow.cells[2].textContent = money(totalPago);
+          totalRow.cells[3].textContent = money(totalDebe);
+        }
+
+        function attach(cells) {
+          cells.forEach((el, idx) => {
+            el.contentEditable = 'true';
+
+            el.addEventListener('focus', () => {
+              // Al hacer focus, mostrar el número crudo (sin formato $)
+              const raw = el.dataset.raw;
+              if (raw) el.textContent = raw;
+              // Seleccionar el contenido
+              setTimeout(() => {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+              }, 0);
+            });
+
+            el.addEventListener('blur', async () => {
+              const newVal = parseMoneyInput(el.textContent.trim());
+              const id = parseInt(el.dataset.id);
+              const field = el.dataset.field;
+              const oldRaw = el.dataset.raw === '' ? null : parseFloat(el.dataset.raw);
+              
+              if (newVal === oldRaw) {
+                // No hubo cambio, restaurar formato
+                el.textContent = newVal !== null ? money(newVal) : '';
+                return;
+              }
+              
+              updateSaveStatus('saving');
+              const { error } = await sb.from('unidades').update({ [field]: newVal }).eq('id', id);
+              if (error) {
+                updateSaveStatus('error');
+                console.error(error);
+              } else {
+                updateSaveStatus('connected');
+                el.dataset.raw = newVal !== null ? newVal : '';
+                el.textContent = newVal !== null ? money(newVal) : '';
+                
+                // Actualizar state local y refrescar columna DEBE y TOTAL
+                const unidad = edificios[edKey].unidades.find(u => u.id === id);
+                if (unidad) {
+                  unidad[field] = newVal;
+                  refreshDebeCell(id);
+                  refreshTotalRow();
+                }
+              }
+            });
+
+            el.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+              if (e.key === 'Escape') {
+                el.textContent = el.dataset.raw ? money(parseFloat(el.dataset.raw)) : '';
+                el.blur();
+              }
+            });
+
+            // Pegar columna desde Excel
+            el.addEventListener('paste', async (e) => {
+              const text = (e.clipboardData || window.clipboardData).getData('text');
+              const lines = text.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
+
+              if (lines.length > 1) {
+                e.preventDefault();
+                
+                // Distribuir desde la celda actual hacia abajo
+                updateSaveStatus('saving');
+                const updates = [];
+                const affectedIds = [];
+                for (let i = 0; i < lines.length && (idx + i) < cells.length; i++) {
+                  const targetCell = cells[idx + i];
+                  const newVal = parseMoneyInput(lines[i]);
+                  const id = parseInt(targetCell.dataset.id);
+                  const field = targetCell.dataset.field;
+                  
+                  // Actualizar visualmente
+                  targetCell.dataset.raw = newVal !== null ? newVal : '';
+                  targetCell.textContent = newVal !== null ? money(newVal) : '';
+                  
+                  // Actualizar state local
+                  const unidad = edificios[edKey].unidades.find(u => u.id === id);
+                  if (unidad) {
+                    unidad[field] = newVal;
+                    affectedIds.push(id);
+                  }
+                  
+                  // Preparar update
+                  updates.push(sb.from('unidades').update({ [field]: newVal }).eq('id', id));
+                }
+                
+                try {
+                  await Promise.all(updates);
+                  updateSaveStatus('connected');
+                  // Refrescar todas las filas afectadas + total
+                  affectedIds.forEach(id => refreshDebeCell(id));
+                  refreshTotalRow();
+                  el.blur();
+                } catch (err) {
+                  console.error(err);
+                  updateSaveStatus('error');
+                }
+              }
+              // Si es una sola línea, dejar que el paste default funcione
+            });
+          });
+        }
+
+        attach(saldoCells);
+        attach(pagoCells);
+
+        // Botones de copiar columna
+        document.querySelectorAll('.btn-copy').forEach(btn => {
+          btn.onclick = async (e) => {
+            e.stopPropagation();
+            const field = btn.dataset.field;
+            const ed = edificios[edKey];
+            // Generar lista de valores con coma decimal (formato Excel argentino)
+            const values = ed.unidades.map(u => {
+              const v = u[field];
+              if (v === null || v === undefined) return '';
+              return String(v).replace('.', ',');
+            });
+            const text = values.join('\n');
+            try {
+              await navigator.clipboard.writeText(text);
+              btn.classList.add('copied');
+              const original = btn.textContent;
+              btn.textContent = '✓';
+              setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.textContent = original;
+              }, 1500);
+            } catch (err) {
+              console.error('Error al copiar:', err);
+              alert('No se pudo copiar al portapapeles');
+            }
+          };
+        });
+      }
+
+      // Iniciar
+      loadData();
+    }
+  </script>
+</body>
+</html>
