@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Consorcios</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --azul: #152E4F;
+      --gris-claro: #f5f5f5;
+      --gris-borde: #e0e0e0;
+      --gris-texto: #6c757d;
+      --verde: #28a745;
+      --verde-bg: #d4edda;
+      --amarillo: #ffc107;
+      --amarillo-bg: #fff3cd;
+      --rojo: #dc3545;
+      --rojo-bg: #f8d7da;
+      --azul-bg: #d1ecf1;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--gris-claro);
+      color: #212529;
+      font-size: 13px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 8px;
+    }
+
+    .header {
+      background: var(--azul);
+      color: white;
+      padding: 10px 14px;
+      border-radius: 6px 6px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .header h2 { font-size: 1.1rem; }
+    .header p { font-size: 12px; color: #c3cbd6; margin-top: 2px; }
+    .save-status { font-size: 11px; color: #8fa0b8; }
+
+    .nav-tabs {
+      display: flex;
+      gap: 2px;
+      padding: 6px;
+      background: var(--gris-claro);
+      border-bottom: 1px solid var(--gris-borde);
+      flex-wrap: wrap;
+    }
+
+    .nav-tab {
+      border: none;
+      background: transparent;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--gris-texto);
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+
+    .nav-tab.active { background: white; color: var(--azul); }
+    .nav-tab:hover { background: rgba(0,0,0,0.05); }
+
+    .content {
+      background: white;
+      padding: 14px;
+      min-height: 60vh;
+      border-radius: 0 0 6px 6px;
+    }
+
+    /* Resumen */
+    .resumen-wrapper { max-width: 520px; }
+    .resumen-titulo {
+      background: var(--azul);
+      color: white;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-top: 16px;
+    }
+    .resumen-titulo:first-child { margin-top: 0; }
+    .resumen-tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .resumen-tabla td { padding: 7px 12px; border-bottom: 1px solid var(--gris-borde); }
+    .resumen-tabla td:last-child { text-align: right; font-weight: 600; }
+
+    /* Tablas de Pagos y Gastos */
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--azul);
+    }
+
+    .tabla-wrapper { overflow-x: auto; margin-bottom: 20px; }
+
+    table.tabla-datos {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    table.tabla-datos th {
+      background: var(--gris-claro);
+      padding: 6px 8px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--gris-texto);
+      border-bottom: 2px solid var(--gris-borde);
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    table.tabla-datos td {
+      padding: 4px 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    table.tabla-datos tr:hover {
+      background: #fafafa;
+    }
+
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* Celdas editables */
+    .editable {
+      cursor: cell;
+      min-height: 22px;
+      padding: 3px 6px;
+      border-radius: 3px;
+      border: 1px solid transparent;
+      transition: border-color 0.1s;
+    }
+
+    .editable:hover {
+      border-color: var(--gris-borde);
+      background: #fafafa;
+    }
+
+    .editable:focus {
+      outline: none;
+      border-color: var(--azul);
+      background: white;
+      box-shadow: 0 0 0 2px rgba(21, 46, 79, 0.1);
+    }
+
+    .editable[contenteditable="true"] {
+      background: white;
+    }
+
+    /* Estados */
+    .estado-btn {
+      border: none;
+      padding: 3px 10px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      min-width: 110px;
+      text-align: center;
+    }
+
+    .estado-PAGO { background: var(--verde-bg); color: #155724; }
+    .estado-PAGAR { background: var(--amarillo-bg); color: #856404; }
+    .estado-SIN { background: var(--rojo-bg); color: #721c24; }
+    .estado-DEBITO { background: var(--azul-bg); color: #0c5460; }
+
+    .estado-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      z-index: 100;
+      background: white;
+      border: 1px solid var(--gris-borde);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      min-width: 140px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .dropdown-item {
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .dropdown-item:hover { filter: brightness(0.95); }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gris-texto);
+    }
+
+    /* Totales */
+    .total-row {
+      background: var(--gris-claro);
+      font-weight: 700;
+    }
+    .total-row td {
+      padding: 8px;
+      border-top: 2px solid var(--azul);
+    }
+
+    /* Help text */
+    .help-text {
+      font-size: 11px;
+      color: var(--gris-texto);
+      margin-bottom: 10px;
+      font-style: italic;
+    }
+
+    /* Botón agregar gasto */
+    .btn-add {
+      background: var(--verde);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .btn-add:hover { background: #218838; }
+
+    @media (max-width: 768px) {
+      .container { padding: 4px; }
+      .header { padding: 8px 10px; }
+      .nav-tabs { overflow-x: auto; flex-wrap: nowrap; }
+      .nav-tab { white-space: nowrap; }
+      table.tabla-datos { font-size: 11px; }
+      table.tabla-datos th, table.tabla-datos td { padding: 4px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h2>Consorcios</h2>
+        <p>Junio 2026</p>
+      </div>
+      <p class="save-status" id="save-status">Conectando…</p>
+    </div>
+
+    <div class="nav-tabs" id="nav-tabs">
+      <button class="nav-tab active" data-view="resumen">Resumen</button>
+      <button class="nav-tab" data-view="gastos">Gastos</button>
+      <button class="nav-tab" data-view="pagos-rivera">Pagos Rivera</button>
+      <button class="nav-tab" data-view="pagos-bucarelli">Pagos Bucarelli</button>
+    </div>
+
+    <div class="content" id="content">
+      <div class="loading">Cargando datos…</div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', initApp);
+
+    async function initApp() {
+      const SUPABASE_URL = 'https://kdyhxowfebovndjufdvp.supabase.co';
+      const SUPABASE_KEY = 'sb_publishable_eGTaa0rEPe-NDqpA5sREYg_Q3kQWJsr';
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      let currentView = 'resumen';
+      let edificios = {};
+      let edificiosArr = [];
+
+      // ---------- HELPERS ----------
+      function money(v) {
+        if (v === null || v === undefined || v === '') return '';
+        const n = Number(v);
+        if (!isFinite(n)) return '';
+        return '$ ' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function parseMoneyInput(raw) {
+        if (raw === '' || raw === null || raw === undefined) return null;
+        // Quita símbolos de moneda y espacios
+        let s = String(raw).trim().replace(/\$|\s/g, '');
+        // Argentina: punto miles, coma decimal
+        // Excel puede dar números crudos o con coma
+        if (s.includes(',')) {
+          s = s.replace(/\./g, '').replace(',', '.');
+        }
+        const n = parseFloat(s);
+        return isFinite(n) ? n : null;
+      }
+
+      function updateSaveStatus(status) {
+        const el = document.getElementById('save-status');
+        if (status === 'saving') el.textContent = 'Guardando…';
+        else if (status === 'error') el.textContent = 'Error al guardar';
+        else el.textContent = 'Sincronizado';
+      }
+
+      // ---------- CARGA INICIAL ----------
+      async function loadData() {
+        try {
+          updateSaveStatus('saving');
+
+          const { data: edData, error: e1 } = await sb.from('edificios').select('*').order('id');
+          if (e1) throw e1;
+
+          edificiosArr = edData;
+          for (const ed of edData) {
+            edificios[ed.clave] = { id: ed.id, nombre: ed.nombre, gastos: [], unidades: [] };
+          }
+
+          const { data: gastosData, error: e2 } = await sb.from('gastos').select('*').order('id');
+          if (e2) throw e2;
+          for (const g of gastosData) {
+            const k = edData.find(e => e.id === g.edificio_id)?.clave;
+            if (k) edificios[k].gastos.push(g);
+          }
+
+          const { data: unidadesData, error: e3 } = await sb.from('unidades').select('*').order('id');
+          if (e3) throw e3;
+          for (const u of unidadesData) {
+            const k = edData.find(e => e.id === u.edificio_id)?.clave;
+            if (k) edificios[k].unidades.push(u);
+          }
+
+          setupRealtime();
+          updateSaveStatus('connected');
+          render();
+        } catch (err) {
+          console.error('Error cargando:', err);
+          updateSaveStatus('error');
+        }
+      }
+
+      function setupRealtime() {
+        sb.channel('gastos-changes')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'gastos' }, (payload) => {
+            const k = edificiosArr.find(e => e.id === (payload.new?.edificio_id || payload.old?.edificio_id))?.clave;
+            if (!k) return;
+            if (payload.eventType === 'INSERT') {
+              if (!edificios[k].gastos.find(g => g.id === payload.new.id)) {
+                edificios[k].gastos.push(payload.new);
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              const i = edificios[k].gastos.findIndex(g => g.id === payload.new.id);
+              if (i !== -1) edificios[k].gastos[i] = payload.new;
+            } else if (payload.eventType === 'DELETE') {
+              edificios[k].gastos = edificios[k].gastos.filter(g => g.id !== payload.old.id);
+            }
+            render();
+          }).subscribe();
+
+        sb.channel('unidades-changes')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'unidades' }, (payload) => {
+            const k = edificiosArr.find(e => e.id === (payload.new?.edificio_id || payload.old?.edificio_id))?.clave;
+            if (!k) return;
+            if (payload.eventType === 'UPDATE') {
+              const i = edificios[k].unidades.findIndex(u => u.id === payload.new.id);
+              if (i !== -1) edificios[k].unidades[i] = payload.new;
+            }
+            render();
+          }).subscribe();
+      }
+
+      // ---------- RENDER ----------
+      function render() {
+        document.querySelectorAll('.nav-tab').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.view === currentView);
+          btn.onclick = () => { currentView = btn.dataset.view; render(); };
+        });
+
+        const c = document.getElementById('content');
+        if (currentView === 'resumen') c.innerHTML = renderResumen();
+        else if (currentView === 'gastos') { c.innerHTML = renderGastos(); attachGastosHandlers(); }
+        else if (currentView === 'pagos-rivera') { c.innerHTML = renderPagos('rivera'); attachPagosHandlers('rivera'); }
+        else if (currentView === 'pagos-bucarelli') { c.innerHTML = renderPagos('bucarelli'); attachPagosHandlers('bucarelli'); }
+      }
+
+      function renderResumen() {
+        let html = '<div class="resumen-wrapper">';
+        for (const [k, ed] of Object.entries(edificios)) {
+          const totalCobrar = ed.unidades.reduce((s, u) => s + (u.saldo || 0), 0);
+          const totalCobrado = ed.unidades.reduce((s, u) => s + (u.pago || 0), 0);
+          const pendiente = totalCobrar - totalCobrado;
+          // Solo cuenta como deudor si debe más de $1 (ignora diferencias por centavos)
+          const conDeuda = ed.unidades.filter(u => ((u.saldo || 0) - (u.pago || 0)) > 1).length;
+          const gastosPend = ed.gastos.filter(g => g.estado === 'PAGAR' || g.estado === '' || !g.estado).length;
+
+          html += `
+            <div class="resumen-titulo">${ed.nombre.toUpperCase()}</div>
+            <table class="resumen-tabla">
+              <tr><td>Total a cobrar este mes</td><td>${money(totalCobrar)}</td></tr>
+              <tr><td>Total cobrado</td><td>${money(totalCobrado)}</td></tr>
+              <tr><td>Saldo pendiente de cobro</td><td>${money(pendiente)}</td></tr>
+              <tr><td>Unidades con deuda</td><td>${conDeuda}</td></tr>
+              <tr><td>Gastos pendientes de pago</td><td>${gastosPend}</td></tr>
+            </table>
+          `;
+        }
+        html += '</div>';
+        return html;
+      }
+
+      function estadoLabel(e) {
+        if (e === 'PAGO') return 'PAGO';
+        if (e === 'PAGAR') return 'PAGAR';
+        if (e === 'DEBITO') return 'DÉBITO';
+        return 'SIN FACTURA';
+      }
+
+      function estadoClase(e) {
+        if (e === 'PAGO') return 'estado-PAGO';
+        if (e === 'PAGAR') return 'estado-PAGAR';
+        if (e === 'DEBITO') return 'estado-DEBITO';
+        return 'estado-SIN';
+      }
+
+      function renderGastos() {
+        let html = '';
+        for (const [k, ed] of Object.entries(edificios)) {
+          html += `
+            <div style="margin-bottom: 24px;">
+              <h3 class="section-title">${ed.nombre}</h3>
+              <div class="tabla-wrapper">
+                <table class="tabla-datos">
+                  <thead>
+                    <tr>
+                      <th style="width: 45%;">Gasto / Proveedor</th>
+                      <th style="width: 30%;"></th>
+                      <th style="width: 25%;">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${ed.gastos.map(g => `
+                      <tr data-id="${g.id}">
+                        <td><div class="editable" data-field="gasto" data-id="${g.id}">${g.gasto || ''}</div></td>
+                        <td><div class="editable" data-field="factura" data-id="${g.id}">${g.factura || ''}</div></td>
+                        <td>
+                          <div class="estado-dropdown">
+                            <button class="estado-btn ${estadoClase(g.estado)}" data-id="${g.id}" data-current="${g.estado || ''}">
+                              ${estadoLabel(g.estado)}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+              <button class="btn-add" data-key="${k}">+ Agregar gasto</button>
+            </div>
+          `;
+        }
+        return html;
+      }
+
+      function renderPagos(edKey) {
+        const ed = edificios[edKey];
+        const totalSaldo = ed.unidades.reduce((s, u) => s + (u.saldo || 0), 0);
+        const totalPago = ed.unidades.reduce((s, u) => s + (u.pago || 0), 0);
+        const debe = totalSaldo - totalPago;
+
+        return `
+          <h3 class="section-title">${ed.nombre} — Listado de Pagos</h3>
+          <p class="help-text">💡 Hacé clic en una celda <strong>SALDO</strong> o <strong>PAGO</strong> para editar. Podés copiar una columna desde Excel y pegarla con Ctrl+V.</p>
+          <div class="tabla-wrapper">
+            <table class="tabla-datos">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">UF</th>
+                  <th style="width: 80px;">Piso</th>
+                  <th>Vecino</th>
+                  <th style="width: 130px;" class="num">Saldo</th>
+                  <th style="width: 130px;" class="num">Pago</th>
+                  <th style="width: 110px;" class="num">Debe</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ed.unidades.map(u => {
+                  const debe = (u.saldo || 0) - (u.pago || 0);
+                  return `
+                    <tr data-id="${u.id}">
+                      <td>${u.uf !== null ? u.uf : ''}</td>
+                      <td>${u.piso || ''}</td>
+                      <td>${u.vecino || ''}</td>
+                      <td class="num"><div class="editable" data-field="saldo" data-id="${u.id}" data-raw="${u.saldo || ''}">${u.saldo ? money(u.saldo) : ''}</div></td>
+                      <td class="num"><div class="editable" data-field="pago" data-id="${u.id}" data-raw="${u.pago || ''}">${u.pago ? money(u.pago) : ''}</div></td>
+                      <td class="num" style="color: ${debe > 1 ? 'var(--rojo)' : debe < -1 ? 'var(--azul)' : 'var(--gris-texto)'}">${Math.abs(debe) < 1 ? '—' : money(debe)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+                <tr class="total-row">
+                  <td colspan="3">TOTAL</td>
+                  <td class="num">${money(totalSaldo)}</td>
+                  <td class="num">${money(totalPago)}</td>
+                  <td class="num">${money(debe)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      // ---------- HANDLERS GASTOS ----------
+      function attachGastosHandlers() {
+        // Editar texto de gasto/factura
+        document.querySelectorAll('#content .editable').forEach(el => {
+          el.contentEditable = 'true';
+          
+          el.addEventListener('focus', () => {
+            el.dataset.original = el.textContent;
+          });
+
+          el.addEventListener('blur', async () => {
+            const newVal = el.textContent.trim();
+            if (newVal === el.dataset.original) return;
+            const id = parseInt(el.dataset.id);
+            const field = el.dataset.field;
+            updateSaveStatus('saving');
+            const { error } = await sb.from('gastos').update({ [field]: newVal }).eq('id', id);
+            updateSaveStatus(error ? 'error' : 'connected');
+          });
+
+          el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+          });
+        });
+
+        // Dropdown de estado
+        document.querySelectorAll('.estado-btn').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.remove());
+
+            const menu = document.createElement('div');
+            menu.className = 'dropdown-menu';
+            const opciones = [
+              { val: '', label: 'SIN FACTURA', clase: 'estado-SIN' },
+              { val: 'PAGAR', label: 'PAGAR', clase: 'estado-PAGAR' },
+              { val: 'PAGO', label: 'PAGO', clase: 'estado-PAGO' },
+              { val: 'DEBITO', label: 'DÉBITO', clase: 'estado-DEBITO' }
+            ];
+            opciones.forEach(opt => {
+              const item = document.createElement('div');
+              item.className = `dropdown-item ${opt.clase}`;
+              item.textContent = opt.label;
+              item.onclick = async () => {
+                const id = parseInt(btn.dataset.id);
+                updateSaveStatus('saving');
+                const { error } = await sb.from('gastos').update({ estado: opt.val }).eq('id', id);
+                updateSaveStatus(error ? 'error' : 'connected');
+                menu.remove();
+              };
+              menu.appendChild(item);
+            });
+            btn.parentElement.appendChild(menu);
+          };
+        });
+
+        // Cerrar dropdown al click afuera
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.estado-dropdown')) {
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.remove());
+          }
+        });
+
+        // Botón agregar gasto
+        document.querySelectorAll('.btn-add').forEach(btn => {
+          btn.onclick = async () => {
+            const k = btn.dataset.key;
+            const edId = edificios[k].id;
+            updateSaveStatus('saving');
+            const { error } = await sb.from('gastos').insert([{
+              edificio_id: edId, gasto: '', factura: '', estado: ''
+            }]);
+            updateSaveStatus(error ? 'error' : 'connected');
+          };
+        });
+      }
+
+      // ---------- HANDLERS PAGOS ----------
+      function attachPagosHandlers(edKey) {
+        const saldoCells = Array.from(document.querySelectorAll('#content .editable[data-field="saldo"]'));
+        const pagoCells = Array.from(document.querySelectorAll('#content .editable[data-field="pago"]'));
+
+        // Refrescar columna DEBE de una fila específica
+        function refreshDebeCell(unidadId) {
+          const unidad = edificios[edKey].unidades.find(u => u.id === unidadId);
+          if (!unidad) return;
+          const row = document.querySelector(`#content tr[data-id="${unidadId}"]`);
+          if (!row) return;
+          const debeCell = row.cells[5];
+          const debe = (unidad.saldo || 0) - (unidad.pago || 0);
+          debeCell.textContent = Math.abs(debe) < 1 ? '—' : money(debe);
+          debeCell.style.color = debe > 1 ? 'var(--rojo)' : debe < -1 ? 'var(--azul)' : 'var(--gris-texto)';
+        }
+
+        // Refrescar fila TOTAL
+        function refreshTotalRow() {
+          const ed = edificios[edKey];
+          const totalRow = document.querySelector('#content .total-row');
+          if (!totalRow) return;
+          const totalSaldo = ed.unidades.reduce((s, u) => s + (u.saldo || 0), 0);
+          const totalPago = ed.unidades.reduce((s, u) => s + (u.pago || 0), 0);
+          const totalDebe = totalSaldo - totalPago;
+          totalRow.cells[1].textContent = money(totalSaldo);
+          totalRow.cells[2].textContent = money(totalPago);
+          totalRow.cells[3].textContent = money(totalDebe);
+        }
+
+        function attach(cells) {
+          cells.forEach((el, idx) => {
+            el.contentEditable = 'true';
+
+            el.addEventListener('focus', () => {
+              // Al hacer focus, mostrar el número crudo (sin formato $)
+              const raw = el.dataset.raw;
+              if (raw) el.textContent = raw;
+              // Seleccionar el contenido
+              setTimeout(() => {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+              }, 0);
+            });
+
+            el.addEventListener('blur', async () => {
+              const newVal = parseMoneyInput(el.textContent.trim());
+              const id = parseInt(el.dataset.id);
+              const field = el.dataset.field;
+              const oldRaw = el.dataset.raw === '' ? null : parseFloat(el.dataset.raw);
+              
+              if (newVal === oldRaw) {
+                // No hubo cambio, restaurar formato
+                el.textContent = newVal !== null ? money(newVal) : '';
+                return;
+              }
+              
+              updateSaveStatus('saving');
+              const { error } = await sb.from('unidades').update({ [field]: newVal }).eq('id', id);
+              if (error) {
+                updateSaveStatus('error');
+                console.error(error);
+              } else {
+                updateSaveStatus('connected');
+                el.dataset.raw = newVal !== null ? newVal : '';
+                el.textContent = newVal !== null ? money(newVal) : '';
+                
+                // Actualizar state local y refrescar columna DEBE y TOTAL
+                const unidad = edificios[edKey].unidades.find(u => u.id === id);
+                if (unidad) {
+                  unidad[field] = newVal;
+                  refreshDebeCell(id);
+                  refreshTotalRow();
+                }
+              }
+            });
+
+            el.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+              if (e.key === 'Escape') {
+                el.textContent = el.dataset.raw ? money(parseFloat(el.dataset.raw)) : '';
+                el.blur();
+              }
+            });
+
+            // Pegar columna desde Excel
+            el.addEventListener('paste', async (e) => {
+              const text = (e.clipboardData || window.clipboardData).getData('text');
+              const lines = text.split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
+
+              if (lines.length > 1) {
+                e.preventDefault();
+                
+                // Distribuir desde la celda actual hacia abajo
+                updateSaveStatus('saving');
+                const updates = [];
+                const affectedIds = [];
+                for (let i = 0; i < lines.length && (idx + i) < cells.length; i++) {
+                  const targetCell = cells[idx + i];
+                  const newVal = parseMoneyInput(lines[i]);
+                  const id = parseInt(targetCell.dataset.id);
+                  const field = targetCell.dataset.field;
+                  
+                  // Actualizar visualmente
+                  targetCell.dataset.raw = newVal !== null ? newVal : '';
+                  targetCell.textContent = newVal !== null ? money(newVal) : '';
+                  
+                  // Actualizar state local
+                  const unidad = edificios[edKey].unidades.find(u => u.id === id);
+                  if (unidad) {
+                    unidad[field] = newVal;
+                    affectedIds.push(id);
+                  }
+                  
+                  // Preparar update
+                  updates.push(sb.from('unidades').update({ [field]: newVal }).eq('id', id));
+                }
+                
+                try {
+                  await Promise.all(updates);
+                  updateSaveStatus('connected');
+                  // Refrescar todas las filas afectadas + total
+                  affectedIds.forEach(id => refreshDebeCell(id));
+                  refreshTotalRow();
+                  el.blur();
+                } catch (err) {
+                  console.error(err);
+                  updateSaveStatus('error');
+                }
+              }
+              // Si es una sola línea, dejar que el paste default funcione
+            });
+          });
+        }
+
+        attach(saldoCells);
+        attach(pagoCells);
+      }
+
+      // Iniciar
+      loadData();
+    }
+  </script>
+</body>
+</html>
