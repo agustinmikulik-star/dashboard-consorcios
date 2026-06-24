@@ -999,12 +999,12 @@
           }
         }
 
-        // Función para ordenar por piso (ej: Local, PB, 1ºA, 1ºB, 2ºA... COCHERA)
+        // Función para ordenar por piso (ej: Local, PB, 1ºA, 1ºB, 2ºA... 🅿️)
         function pisoSortKey(piso) {
           if (!piso) return [999, ''];
           const lower = piso.toLowerCase();
           if (lower.includes('local')) return [-2, ''];
-          if (lower.includes('cochera')) return [200, ''];
+          if (lower.includes('cochera') || lower.includes('coch.') || piso.includes('🅿️')) return [200, ''];
           if (lower.includes('pb')) {
             const letra = piso.match(/[A-Z]$/i)?.[0] || '';
             return [0, letra];
