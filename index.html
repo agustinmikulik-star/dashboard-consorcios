@@ -74,6 +74,16 @@
       --cyan-bg: #ecfeff;
       --cyan-text: #0e7490;
 
+      /* Estados de pago */
+      --estado-azul-bg: #dbeafe;
+      --estado-azul-text: #1e40af;
+      --estado-lila-bg: #f3e8ff;
+      --estado-lila-text: #6b21a8;
+      --estado-naranja-bg: #ffedd5;
+      --estado-naranja-text: #9a3412;
+      --estado-gris-bg: #e5e7eb;
+      --estado-gris-text: #4b5563;
+
       /* Sombras */
       --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
       --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
@@ -352,11 +362,11 @@
     }
     .estado-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 
-    .estado-PAGO { background: var(--verde-bg); color: var(--verde-text); }
+    .estado-PAGO { background: var(--estado-azul-bg); color: var(--estado-azul-text); }
     .estado-PAGAR { background: var(--amarillo-bg); color: var(--amarillo-text); }
-    .estado-SIN { background: var(--rojo-bg); color: var(--rojo-text); }
-    .estado-DEBITO { background: var(--cyan-bg); color: var(--cyan-text); }
-    .estado-NA { background: #f0f1f4; color: #6b7280; }
+    .estado-SIN { background: var(--estado-naranja-bg); color: var(--estado-naranja-text); }
+    .estado-DEBITO { background: var(--verde-bg); color: var(--verde-text); }
+    .estado-NA { background: var(--estado-gris-bg); color: var(--estado-gris-text); }
 
     /* Botón eliminar sutil */
     .btn-delete-row {
@@ -439,20 +449,23 @@
 
     /* BOTÓN AGREGAR */
     .btn-add {
-      background: var(--azul-800);
-      color: white;
-      border: none;
-      padding: 9px 16px;
+      background: transparent;
+      color: var(--azul-700);
+      border: 1px dashed var(--border);
+      padding: 8px 14px;
       border-radius: var(--radius-sm);
       cursor: pointer;
       font-size: 13px;
       font-weight: 600;
-      margin-top: 4px;
+      margin-top: 10px;
       transition: all 0.15s;
       font-family: inherit;
-      box-shadow: var(--shadow-sm);
     }
-    .btn-add:hover { background: var(--azul-900); transform: translateY(-1px); box-shadow: var(--shadow); }
+    .btn-add:hover {
+      background: var(--azul-50);
+      border-color: var(--azul-600);
+      border-style: solid;
+    }
 
     /* BOTÓN COPIAR */
     .btn-copy {
@@ -1175,7 +1188,7 @@
         if (e === 'PAGAR') return 'PAGAR';
         if (e === 'DEBITO') return 'DÉBITO';
         if (e === 'NA') return '—';
-        return 'SIN FACTURA';
+        return 'PENDIENTE';
       }
 
       function estadoClase(e) {
@@ -1322,7 +1335,7 @@
             const menu = document.createElement('div');
             menu.className = 'dropdown-menu';
             const opciones = [
-              { val: '', label: 'SIN FACTURA', clase: 'estado-SIN' },
+              { val: '', label: 'PENDIENTE', clase: 'estado-SIN' },
               { val: 'PAGAR', label: 'PAGAR', clase: 'estado-PAGAR' },
               { val: 'PAGO', label: 'PAGO', clase: 'estado-PAGO' },
               { val: 'DEBITO', label: 'DÉBITO', clase: 'estado-DEBITO' },
