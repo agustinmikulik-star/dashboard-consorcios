@@ -37,7 +37,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Saira:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -127,7 +127,7 @@
     .header-text { flex: 1; min-width: 140px; }
 
     .header h1 {
-      font-family: 'Saira', 'Inter', sans-serif;
+      font-family: 'Montserrat', 'Inter', sans-serif;
       font-size: 22px;
       font-weight: 700;
       letter-spacing: 0.02em;
@@ -478,7 +478,7 @@
       border-color: var(--verde);
     }
 
-    /* NOTAS */
+    /* TODOS / TAREAS */
     .notas-section {
       margin-top: 28px;
       max-width: 760px;
@@ -504,22 +504,82 @@
       letter-spacing: 0.02em;
       text-transform: uppercase;
     }
-    .notas-content {
-      padding: 16px 18px;
-      min-height: 140px;
-      font-size: 14px;
-      line-height: 1.6;
-      color: var(--text);
-      outline: none;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      transition: background 0.15s;
+    .todos-list {
+      padding: 4px 0;
     }
-    .notas-content:focus { background: var(--azul-50); }
-    .notas-content:empty:before {
-      content: 'Escribí tus notas acá…';
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border-soft);
+      transition: background 0.12s;
+    }
+    .todo-item:last-of-type {
+      border-bottom: none;
+    }
+    .todo-item:hover {
+      background: var(--azul-50);
+    }
+    .todo-check {
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--azul-800);
+      flex-shrink: 0;
+    }
+    .todo-text {
+      flex: 1;
+      outline: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      line-height: 1.4;
+      border: 1px solid transparent;
+      transition: all 0.12s;
+      min-height: 22px;
+    }
+    .todo-text:hover {
+      border-color: var(--border);
+    }
+    .todo-text:focus {
+      background: var(--surface);
+      border-color: var(--azul-600);
+      box-shadow: 0 0 0 3px rgba(37, 69, 111, 0.12);
+    }
+    .todo-text:empty:before {
+      content: 'Escribí una tarea…';
       color: var(--text-subtle);
       font-style: italic;
+    }
+    .todo-item.completed .todo-text {
+      text-decoration: line-through;
+      color: var(--text-subtle);
+    }
+    .todos-empty {
+      padding: 18px 14px;
+      text-align: center;
+      color: var(--text-subtle);
+      font-size: 13px;
+      font-style: italic;
+    }
+    .btn-add-todo {
+      margin: 10px 14px 14px;
+      background: transparent;
+      color: var(--azul-700);
+      border: 1px dashed var(--border);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .btn-add-todo:hover {
+      background: var(--azul-50);
+      border-color: var(--azul-600);
+      border-style: solid;
     }
 
     /* SECCIÓN DE GASTOS */
@@ -528,16 +588,50 @@
 
     /* MOBILE */
     @media (max-width: 768px) {
-      .container { padding: 12px 10px 24px; }
-      .header { padding: 16px 18px; gap: 12px; }
-      .header-logo { width: 36px; height: 36px; }
-      .header h1 { font-size: 18px; }
-      .content { padding: 18px 14px; }
+      .container { padding: 8px 8px 20px; }
+      .header { padding: 12px 14px; gap: 10px; border-radius: 10px 10px 0 0; }
+      .header-logo { width: 32px; height: 32px; }
+      .header h1 { font-size: 16px; }
+      .header .subtitle { font-size: 11px; }
+      .save-status { font-size: 11px; }
+
+      .nav-tabs { padding: 6px; gap: 2px; }
+      .nav-tab { padding: 7px 11px; font-size: 12px; }
+
+      .content { padding: 14px 12px; border-radius: 0 0 10px 10px; }
+
       .section-title { font-size: 15px; }
-      table.tabla-datos { font-size: 12px; }
-      table.tabla-datos th, table.tabla-datos td { padding: 8px 10px; }
-      .estado-btn { min-width: 90px; padding: 4px 8px; font-size: 10px; }
-      .resumen-wrapper { grid-template-columns: 1fr; }
+      .section-subtitle { font-size: 12px; margin-bottom: 12px; }
+
+      /* Resumen compacto en mobile */
+      .resumen-wrapper {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .resumen-card { border-radius: 8px; }
+      .resumen-card-header { padding: 8px 12px; }
+      .resumen-card-header h3 { font-size: 11.5px; letter-spacing: 0.04em; }
+      .resumen-row { padding: 8px 12px; }
+      .resumen-row .label { font-size: 12.5px; }
+      .resumen-row .value { font-size: 13px; }
+      .resumen-row.highlight .value { font-size: 14px; }
+
+      /* Tareas compactas */
+      .notas-section { margin-top: 16px; }
+      .notas-card-header { padding: 8px 12px; }
+      .notas-card-header h3 { font-size: 11.5px; }
+      .todo-item { padding: 6px 12px; gap: 8px; }
+      .todo-text { font-size: 13.5px; }
+      .btn-add-todo { margin: 8px 12px 12px; padding: 7px 12px; font-size: 12.5px; }
+
+      /* Tablas más compactas */
+      table.tabla-datos { font-size: 11.5px; }
+      table.tabla-datos th { padding: 8px 8px; font-size: 10px; letter-spacing: 0.04em; }
+      table.tabla-datos td { padding: 7px 8px; }
+      .estado-btn { min-width: 84px; padding: 4px 8px; font-size: 9.5px; }
+      .help-text { padding: 8px 10px; font-size: 11.5px; margin-bottom: 12px; }
+      .editable { padding: 3px 6px; margin: -3px -6px; }
+      .total-row td { padding: 9px 8px; font-size: 12px; }
     }
   </style>
 </head>
@@ -581,7 +675,7 @@
       let currentView = 'resumen';
       let edificios = {};
       let edificiosArr = [];
-      let notaContenido = '';
+      let todos = [];
 
       // ---------- HELPERS ----------
       function money(v) {
@@ -645,10 +739,10 @@
             if (k) edificios[k].unidades.push(u);
           }
 
-          // Cargar notas
-          const { data: notasData } = await sb.from('notas').select('*').limit(1);
-          if (notasData && notasData.length > 0) {
-            notaContenido = notasData[0].contenido || '';
+          // Cargar todos
+          const { data: todosData } = await sb.from('todos').select('*').order('id');
+          if (todosData) {
+            todos = todosData;
           }
 
           setupRealtime();
@@ -731,39 +825,130 @@
         }
         html += '</div>';
 
-        // Sección de Notas
+        // Sección de Tareas / To-Do List
+        const todosHtml = todos.length === 0
+          ? '<div class="todos-empty">No hay tareas pendientes</div>'
+          : todos.map(t => `
+              <div class="todo-item ${t.completado ? 'completed' : ''}" data-id="${t.id}">
+                <input type="checkbox" class="todo-check" ${t.completado ? 'checked' : ''} data-id="${t.id}">
+                <div class="todo-text" contenteditable="true" data-id="${t.id}">${(t.texto || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                <button class="btn-delete-row todo-delete" data-id="${t.id}" title="Eliminar tarea">×</button>
+              </div>
+            `).join('');
+
         html += `
           <div class="notas-section">
             <div class="notas-card">
               <div class="notas-card-header">
-                <h3>Notas</h3>
+                <h3>Tareas pendientes</h3>
               </div>
-              <div class="notas-content" id="notas-content" contenteditable="true">${notaContenido.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+              <div class="todos-list">
+                ${todosHtml}
+              </div>
+              <button class="btn-add-todo" id="btn-add-todo">+ Agregar tarea</button>
             </div>
           </div>
         `;
 
-        // Attach handler después de que se renderice
-        setTimeout(() => {
-          const el = document.getElementById('notas-content');
-          if (el) {
-            el.addEventListener('blur', async () => {
-              const newVal = el.innerText;
-              if (newVal === notaContenido) return;
-              updateSaveStatus('saving');
-              const { error } = await sb.from('notas').update({ contenido: newVal, updated_at: new Date().toISOString() }).eq('id', 1);
-              if (error) {
-                updateSaveStatus('error');
-                console.error(error);
-              } else {
-                updateSaveStatus('connected');
-                notaContenido = newVal;
-              }
-            });
-          }
-        }, 0);
+        // Attach handlers después de renderizar
+        setTimeout(() => attachTodoHandlers(), 0);
 
         return html;
+      }
+
+      // Handlers para to-dos
+      function attachTodoHandlers() {
+        // Checkbox: toggle completado
+        document.querySelectorAll('.todo-check').forEach(chk => {
+          chk.onchange = async () => {
+            const id = parseInt(chk.dataset.id);
+            const completado = chk.checked;
+            updateSaveStatus('saving');
+            const { error } = await sb.from('todos').update({ completado }).eq('id', id);
+            if (error) {
+              updateSaveStatus('error');
+              console.error(error);
+            } else {
+              updateSaveStatus('connected');
+              // Actualizar state local
+              const todo = todos.find(t => t.id === id);
+              if (todo) todo.completado = completado;
+              // Actualizar visualmente sin re-render
+              const item = chk.closest('.todo-item');
+              if (item) item.classList.toggle('completed', completado);
+            }
+          };
+        });
+
+        // Texto editable
+        document.querySelectorAll('.todo-text').forEach(el => {
+          el.addEventListener('focus', () => {
+            el.dataset.original = el.textContent;
+          });
+          el.addEventListener('blur', async () => {
+            const newVal = el.textContent.trim();
+            if (newVal === el.dataset.original) return;
+            const id = parseInt(el.dataset.id);
+            updateSaveStatus('saving');
+            const { error } = await sb.from('todos').update({ texto: newVal }).eq('id', id);
+            if (error) {
+              updateSaveStatus('error');
+            } else {
+              updateSaveStatus('connected');
+              const todo = todos.find(t => t.id === id);
+              if (todo) todo.texto = newVal;
+            }
+          });
+          el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+          });
+        });
+
+        // Botón eliminar (X)
+        document.querySelectorAll('.todo-delete').forEach(btn => {
+          btn.onclick = async () => {
+            const id = parseInt(btn.dataset.id);
+            updateSaveStatus('saving');
+            const { error } = await sb.from('todos').delete().eq('id', id);
+            if (error) {
+              updateSaveStatus('error');
+              console.error(error);
+            } else {
+              updateSaveStatus('connected');
+              // Actualizar state local
+              todos = todos.filter(t => t.id !== id);
+              // Re-renderizar la vista
+              if (currentView === 'resumen') render();
+            }
+          };
+        });
+
+        // Botón agregar tarea
+        const btnAdd = document.getElementById('btn-add-todo');
+        if (btnAdd) {
+          btnAdd.onclick = async () => {
+            updateSaveStatus('saving');
+            const { data, error } = await sb.from('todos').insert([{
+              texto: '', completado: false
+            }]).select();
+            if (error) {
+              updateSaveStatus('error');
+              console.error(error);
+            } else {
+              updateSaveStatus('connected');
+              if (data && data.length > 0) {
+                todos.push(data[0]);
+                render();
+                // Poner foco en el nuevo input
+                setTimeout(() => {
+                  const newId = data[0].id;
+                  const el = document.querySelector(`.todo-text[data-id="${newId}"]`);
+                  if (el) el.focus();
+                }, 50);
+              }
+            }
+          };
+        }
       }
 
       function estadoLabel(e) {
