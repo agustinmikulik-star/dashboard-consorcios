@@ -478,6 +478,67 @@
       border-color: var(--verde);
     }
 
+    /* DEUDORES */
+    .deudores-section {
+      margin-top: 16px;
+      max-width: 760px;
+    }
+    .deudores-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+    .deudores-table th {
+      background: var(--azul-50);
+      padding: 8px 14px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--azul-800);
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+    }
+    .deudores-table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .deudores-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .deudores-table tbody tr:hover {
+      background: var(--azul-50);
+    }
+    .deudores-table .debe-monto {
+      color: var(--rojo);
+      font-weight: 600;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .deudores-empty {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .deudores-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .deudores-badge.rivera {
+      background: #e8edf3;
+      color: var(--azul-800);
+    }
+    .deudores-badge.bucarelli {
+      background: #fff3cd;
+      color: #856404;
+    }
+
     /* TODOS / TAREAS */
     .notas-section {
       margin-top: 28px;
@@ -645,6 +706,14 @@
       .dropdown-item { padding: 5px 8px; font-size: 10px; }
 
       .gastos-section { margin-bottom: 22px; }
+
+      /* Deudores mobile */
+      .deudores-section { margin-top: 12px; }
+      .deudores-table { font-size: 11px; }
+      .deudores-table th { padding: 6px 8px; font-size: 9.5px; letter-spacing: 0.03em; }
+      .deudores-table td { padding: 6px 8px; }
+      .deudores-badge { padding: 2px 6px; font-size: 9.5px; }
+      .deudores-empty { padding: 14px; font-size: 12px; }
     }
   </style>
 </head>
@@ -725,10 +794,58 @@
         }
       }
 
+      // ---------- RESET MENSUAL DE GASTOS ----------
+      async function checkMonthlyReset() {
+        try {
+          const ahora = new Date();
+          const mesActual = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+
+          // Leer último mes registrado en la tabla meta
+          const { data: metaData } = await sb.from('meta').select('*').limit(1);
+
+          if (!metaData || metaData.length === 0) {
+            // No hay registro en meta, crear uno
+            await sb.from('meta').insert([{ mes_actual: mesActual }]);
+            return;
+          }
+
+          const meta = metaData[0];
+          const ultimoMes = meta.mes_actual;
+
+          // Si el formato no es YYYY-MM (es viejo), solo actualizar sin resetear
+          if (!ultimoMes || !/^\d{4}-\d{2}$/.test(ultimoMes)) {
+            await sb.from('meta').update({ mes_actual: mesActual }).eq('id', meta.id);
+            return;
+          }
+
+          // Si el mes coincide con el último registrado, no hacer nada
+          if (ultimoMes === mesActual) return;
+
+          // El mes cambió: resetear gastos (excepto DEBITO)
+          console.log(`Reset mensual: ${ultimoMes} → ${mesActual}`);
+          const { error: resetError } = await sb.from('gastos')
+            .update({ estado: 'NA' })
+            .or('estado.is.null,estado.neq.DEBITO');
+
+          if (resetError) {
+            console.error('Error al resetear estados:', resetError);
+            return;
+          }
+
+          // Marcar el nuevo mes como procesado
+          await sb.from('meta').update({ mes_actual: mesActual }).eq('id', meta.id);
+        } catch (err) {
+          console.error('Error en checkMonthlyReset:', err);
+        }
+      }
+
       // ---------- CARGA INICIAL ----------
       async function loadData() {
         try {
           updateSaveStatus('saving');
+
+          // Reset mensual: si el mes cambió, los estados (excepto DEBITO) vuelven a "—"
+          await checkMonthlyReset();
 
           const { data: edData, error: e1 } = await sb.from('edificios').select('*').order('id');
           if (e1) throw e1;
@@ -859,6 +976,95 @@
                 ${todosHtml}
               </div>
               <button class="btn-add-todo" id="btn-add-todo">+ Agregar tarea</button>
+            </div>
+          </div>
+        `;
+
+        // Sección de Deudores
+        const deudores = [];
+        for (const [k, ed] of Object.entries(edificios)) {
+          const corto = ed.nombre.split(' ')[0]; // "Rivera" o "Bucarelli"
+          const claseBadge = k; // 'rivera' o 'bucarelli'
+          for (const u of ed.unidades) {
+            const debe = (u.saldo || 0) - (u.pago || 0);
+            if (debe > 1) {
+              deudores.push({
+                edificio: corto,
+                claseBadge: claseBadge,
+                piso: u.piso || '',
+                vecino: u.vecino || '',
+                debe: debe
+              });
+            }
+          }
+        }
+
+        // Función para ordenar por piso (ej: Local, PB, 1ºA, 1ºB, 2ºA... COCHERA)
+        function pisoSortKey(piso) {
+          if (!piso) return [999, ''];
+          const lower = piso.toLowerCase();
+          if (lower.includes('local')) return [-2, ''];
+          if (lower.includes('cochera')) return [200, ''];
+          if (lower.includes('pb')) {
+            const letra = piso.match(/[A-Z]$/i)?.[0] || '';
+            return [0, letra];
+          }
+          const numMatch = piso.match(/(\d+)/);
+          const num = numMatch ? parseInt(numMatch[1]) : 999;
+          const letra = piso.match(/[A-Z]$/i)?.[0] || '';
+          return [num, letra];
+        }
+
+        // Orden: Rivera primero (luego Bucarelli), y dentro de cada edificio por piso
+        deudores.sort((a, b) => {
+          if (a.claseBadge !== b.claseBadge) {
+            return a.claseBadge === 'rivera' ? -1 : 1;
+          }
+          const [aN, aL] = pisoSortKey(a.piso);
+          const [bN, bL] = pisoSortKey(b.piso);
+          if (aN !== bN) return aN - bN;
+          return aL.localeCompare(bL);
+        });
+
+        let deudoresBody;
+        if (deudores.length === 0) {
+          deudoresBody = '<div class="deudores-empty">🎉 No hay unidades con deuda</div>';
+        } else {
+          deudoresBody = `
+            <table class="deudores-table">
+              <thead>
+                <tr>
+                  <th style="width: 90px;">Edificio</th>
+                  <th style="width: 70px;">Piso</th>
+                  <th>Vecino</th>
+                  <th class="num" style="width: 130px;">Debe</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${deudores.map(d => `
+                  <tr>
+                    <td><span class="deudores-badge ${d.claseBadge}">${d.edificio}</span></td>
+                    <td>${d.piso}</td>
+                    <td>${d.vecino}</td>
+                    <td class="debe-monto">${money(d.debe)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+
+        const tituloDeudores = deudores.length === 0
+          ? 'Deudores'
+          : `Deudores · ${deudores.length} ${deudores.length === 1 ? 'unidad' : 'unidades'}`;
+
+        html += `
+          <div class="deudores-section">
+            <div class="notas-card">
+              <div class="notas-card-header">
+                <h3>${tituloDeudores}</h3>
+              </div>
+              ${deudoresBody}
             </div>
           </div>
         `;
