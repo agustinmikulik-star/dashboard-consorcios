@@ -588,50 +588,63 @@
 
     /* MOBILE */
     @media (max-width: 768px) {
-      .container { padding: 8px 8px 20px; }
-      .header { padding: 12px 14px; gap: 10px; border-radius: 10px 10px 0 0; }
-      .header-logo { width: 32px; height: 32px; }
-      .header h1 { font-size: 16px; }
-      .header .subtitle { font-size: 11px; }
-      .save-status { font-size: 11px; }
+      html, body { font-size: 13px; }
+      .container { padding: 6px 6px 16px; }
+      .header { padding: 10px 12px; gap: 8px; border-radius: 10px 10px 0 0; }
+      .header-logo { width: 28px; height: 28px; }
+      .header h1 { font-size: 14.5px; letter-spacing: 0.02em; }
+      .header .subtitle { font-size: 10.5px; margin-top: 1px; }
+      .save-status { font-size: 10px; gap: 4px; }
+      .save-status::before { width: 6px; height: 6px; }
 
-      .nav-tabs { padding: 6px; gap: 2px; }
-      .nav-tab { padding: 7px 11px; font-size: 12px; }
+      .nav-tabs { padding: 4px; gap: 2px; }
+      .nav-tab { padding: 6px 10px; font-size: 11.5px; }
 
-      .content { padding: 14px 12px; border-radius: 0 0 10px 10px; }
+      .content { padding: 10px 10px; border-radius: 0 0 10px 10px; }
 
-      .section-title { font-size: 15px; }
-      .section-subtitle { font-size: 12px; margin-bottom: 12px; }
+      .section-title { font-size: 14px; }
+      .section-subtitle { font-size: 11.5px; margin-bottom: 10px; }
 
-      /* Resumen compacto en mobile */
+      /* Resumen ultra compacto en mobile */
       .resumen-wrapper {
         grid-template-columns: 1fr;
-        gap: 12px;
+        gap: 10px;
       }
       .resumen-card { border-radius: 8px; }
-      .resumen-card-header { padding: 8px 12px; }
-      .resumen-card-header h3 { font-size: 11.5px; letter-spacing: 0.04em; }
-      .resumen-row { padding: 8px 12px; }
-      .resumen-row .label { font-size: 12.5px; }
-      .resumen-row .value { font-size: 13px; }
-      .resumen-row.highlight .value { font-size: 14px; }
+      .resumen-card-header { padding: 6px 10px; }
+      .resumen-card-header h3 { font-size: 11px; letter-spacing: 0.04em; }
+      .resumen-row { padding: 6px 10px; }
+      .resumen-row .label { font-size: 12px; }
+      .resumen-row .value { font-size: 12.5px; }
+      .resumen-row.highlight .value { font-size: 13.5px; }
 
       /* Tareas compactas */
-      .notas-section { margin-top: 16px; }
-      .notas-card-header { padding: 8px 12px; }
-      .notas-card-header h3 { font-size: 11.5px; }
-      .todo-item { padding: 6px 12px; gap: 8px; }
-      .todo-text { font-size: 13.5px; }
-      .btn-add-todo { margin: 8px 12px 12px; padding: 7px 12px; font-size: 12.5px; }
+      .notas-section { margin-top: 12px; }
+      .notas-card-header { padding: 6px 10px; }
+      .notas-card-header h3 { font-size: 11px; }
+      .todo-item { padding: 5px 10px; gap: 7px; }
+      .todo-check { width: 16px; height: 16px; }
+      .todo-text { font-size: 13px; padding: 3px 6px; }
+      .btn-add-todo { margin: 6px 10px 10px; padding: 6px 10px; font-size: 12px; }
+      .todos-empty { padding: 14px 10px; font-size: 12px; }
 
       /* Tablas más compactas */
-      table.tabla-datos { font-size: 11.5px; }
-      table.tabla-datos th { padding: 8px 8px; font-size: 10px; letter-spacing: 0.04em; }
-      table.tabla-datos td { padding: 7px 8px; }
-      .estado-btn { min-width: 84px; padding: 4px 8px; font-size: 9.5px; }
-      .help-text { padding: 8px 10px; font-size: 11.5px; margin-bottom: 12px; }
-      .editable { padding: 3px 6px; margin: -3px -6px; }
-      .total-row td { padding: 9px 8px; font-size: 12px; }
+      table.tabla-datos { font-size: 11px; }
+      table.tabla-datos th { padding: 6px 6px; font-size: 9.5px; letter-spacing: 0.03em; }
+      table.tabla-datos td { padding: 5px 6px; }
+      .estado-btn { min-width: 72px; padding: 3px 6px; font-size: 9px; letter-spacing: 0.02em; }
+      .help-text { padding: 7px 9px; font-size: 11px; margin-bottom: 10px; border-radius: 4px; }
+      .editable { padding: 2px 5px; margin: -2px -5px; }
+      .total-row td { padding: 7px 6px; font-size: 11.5px; }
+      .btn-add { padding: 7px 12px; font-size: 12px; }
+      .btn-delete-row { font-size: 14px; padding: 1px 6px; }
+      .btn-copy { font-size: 10px; padding: 2px 5px; }
+
+      /* Dropdown menu más compacto */
+      .dropdown-menu { min-width: 130px; }
+      .dropdown-item { padding: 5px 8px; font-size: 10px; }
+
+      .gastos-section { margin-bottom: 22px; }
     }
   </style>
 </head>
