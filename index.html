@@ -491,6 +491,25 @@
       border-color: var(--verde);
     }
 
+    /* BOTÓN BORRAR COLUMNA */
+    .btn-clear {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--rojo);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      line-height: 1;
+    }
+    .btn-clear:hover {
+      background: var(--rojo-bg, #fde8e8);
+      border-color: var(--rojo);
+      transform: scale(1.05);
+    }
+
     /* DEUDORES */
     .deudores-section {
       margin-top: 16px;
@@ -1264,12 +1283,14 @@
                     <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
                       Saldo
                       <button class="btn-copy" data-field="saldo" data-key="${edKey}" title="Copiar columna Saldo para Excel">📋</button>
+                      <button class="btn-clear" data-field="saldo" data-key="${edKey}" title="Borrar toda la columna Saldo">🗑️</button>
                     </div>
                   </th>
                   <th style="width: 150px;" class="num">
                     <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
                       Pago
                       <button class="btn-copy" data-field="pago" data-key="${edKey}" title="Copiar columna Pago para Excel">📋</button>
+                      <button class="btn-clear" data-field="pago" data-key="${edKey}" title="Borrar toda la columna Pago">🗑️</button>
                     </div>
                   </th>
                   <th style="width: 130px;" class="num">Debe</th>
@@ -1594,6 +1615,43 @@
             } catch (err) {
               console.error('Error al copiar:', err);
               alert('No se pudo copiar al portapapeles');
+            }
+          };
+        });
+
+        // Botones de borrar columna
+        document.querySelectorAll('.btn-clear').forEach(btn => {
+          btn.onclick = async (e) => {
+            e.stopPropagation();
+            const field = btn.dataset.field;
+            const ed = edificios[edKey];
+            const nombreCol = field === 'saldo' ? 'Saldo' : 'Pago';
+
+            // Solo unidades que tienen un valor cargado en esa columna
+            const aBorrar = ed.unidades.filter(u => u[field] !== null && u[field] !== undefined);
+            if (aBorrar.length === 0) {
+              alert(`La columna ${nombreCol} ya está vacía.`);
+              return;
+            }
+
+            const ok = confirm(`¿Borrar TODOS los valores de la columna ${nombreCol} de ${ed.nombre}?\n\nSe vaciarán ${aBorrar.length} celda(s). Esta acción no se puede deshacer.`);
+            if (!ok) return;
+
+            updateSaveStatus('saving');
+            const updates = aBorrar.map(u => sb.from('unidades').update({ [field]: null }).eq('id', u.id));
+
+            try {
+              await Promise.all(updates);
+              // Actualizar state local
+              aBorrar.forEach(u => { u[field] = null; });
+              updateSaveStatus('connected');
+              // Re-renderizar la vista para reflejar columna vacía, totales y DEBE
+              if (currentView === 'pagos-rivera') { document.getElementById('content').innerHTML = renderPagos('rivera'); attachPagosHandlers('rivera'); }
+              else if (currentView === 'pagos-bucarelli') { document.getElementById('content').innerHTML = renderPagos('bucarelli'); attachPagosHandlers('bucarelli'); }
+            } catch (err) {
+              console.error('Error al borrar columna:', err);
+              updateSaveStatus('error');
+              alert('No se pudieron borrar todos los valores. Revisá la conexión.');
             }
           };
         });
