@@ -1303,7 +1303,7 @@
                     <tr data-id="${u.id}">
                       <td>${u.uf !== null ? u.uf : ''}</td>
                       <td>${u.piso || ''}</td>
-                      <td>${u.vecino || ''}</td>
+                      <td><div class="editable editable-text" data-field="vecino" data-id="${u.id}">${u.vecino || ''}</div></td>
                       <td class="num"><div class="editable" data-field="saldo" data-id="${u.id}" data-raw="${u.saldo || ''}">${u.saldo ? money(u.saldo) : ''}</div></td>
                       <td class="num"><div class="editable" data-field="pago" data-id="${u.id}" data-raw="${u.pago || ''}">${u.pago ? money(u.pago) : ''}</div></td>
                       <td class="num" style="color: ${debe > 1 ? 'var(--rojo)' : debe < -1 ? 'var(--cyan-text)' : 'var(--text-subtle)'}; font-weight: ${Math.abs(debe) > 1 ? '600' : '400'};">${Math.abs(debe) < 1 ? '—' : money(debe)}</td>
@@ -1589,6 +1589,52 @@
 
         attach(saldoCells);
         attach(pagoCells);
+
+        // Edición de nombres (columna Vecino)
+        const nombreCells = Array.from(document.querySelectorAll('#content .editable-text[data-field="vecino"]'));
+        nombreCells.forEach(el => {
+          el.contentEditable = 'true';
+          let original = el.textContent;
+
+          el.addEventListener('focus', () => {
+            original = el.textContent;
+            setTimeout(() => {
+              const range = document.createRange();
+              range.selectNodeContents(el);
+              const sel = window.getSelection();
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }, 0);
+          });
+
+          el.addEventListener('blur', async () => {
+            const newVal = el.textContent.trim();
+            const id = parseInt(el.dataset.id);
+
+            if (newVal === original.trim()) {
+              el.textContent = original.trim();
+              return;
+            }
+
+            updateSaveStatus('saving');
+            const { error } = await sb.from('unidades').update({ vecino: newVal }).eq('id', id);
+            if (error) {
+              updateSaveStatus('error');
+              console.error(error);
+              el.textContent = original.trim();
+            } else {
+              updateSaveStatus('connected');
+              el.textContent = newVal;
+              const unidad = edificios[edKey].unidades.find(u => u.id === id);
+              if (unidad) unidad.vecino = newVal;
+            }
+          });
+
+          el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+            if (e.key === 'Escape') { el.textContent = original; el.blur(); }
+          });
+        });
 
         // Botones de copiar columna
         document.querySelectorAll('.btn-copy').forEach(btn => {
